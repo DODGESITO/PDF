@@ -1,0 +1,54 @@
+{% load static %}
+<link rel="icon" href="{% static 'image/icon.ico' %}" type="image/x-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/nav.css' %}">
+
+<nav class="navbar">
+    <div class="nav-container">
+        <!-- Logo -->
+        <a href="{% url 'home' %}" class="nav-brand">
+            <img src="{% static 'image/icon.png' %}" alt="Logo" class="logo">
+            <span class="brand-text">PDF Editor</span>
+        </a>
+
+        <!-- Navigation Links -->
+        <div class="nav-links">
+            <a href="{% url 'join_pdf' %}" class="nav-link">Unir PDFs</a>
+            <a href="{% url 'split_pdf' %}" class="nav-link">Dividir PDFs</a>
+            <a href="{% url 'compress_pdf' %}" class="nav-link">Comprimir PDFs</a>
+            <a href="{% url 'rotate_pdf' %}" class="nav-link">Rotar PDFs</a>
+        </div>
+
+        <!-- Mobile Menu Button -->
+        <button class="mobile-menu-btn" id="mobileMenuBtn">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="{% url 'join_pdf' %}" class="mobile-link">Unir PDFs</a>
+        <a href="{% url 'split_pdf' %}" class="mobile-link">Dividir PDFs</a>
+        <a href="{% url 'compress_pdf' %}" class="mobile-link">Comprimir PDFs</a>
+        <a href="{% url 'rotate_pdf' %}" class="mobile-link">Rotar PDFs</a>
+    </div>
+</nav>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    
+    mobileMenuBtn.addEventListener('click', function() {
+        mobileMenuBtn.classList.toggle('active');
+        mobileMenu.classList.toggle('active');
+    });
+});
+</script>
+
+{% block cont %}
+{% endblock %}

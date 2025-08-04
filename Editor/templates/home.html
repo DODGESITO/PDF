@@ -1,0 +1,120 @@
+{% extends "layout/nav.html" %}
+{% load static %}
+{% block cont %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
+</head>
+<body>
+    <!-- Efectos de fondo -->
+    <div class="background-effects">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+    
+    <div class="container">
+        <div class="header-section">
+            <div class="icon-wrapper">
+                <svg class="main-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10,9 9,9 8,9"/>
+                </svg>
+            </div>
+            <h1>Editor de PDFs</h1>
+            <p class="subtitle">Transforma, optimiza y gestiona tus documentos PDF con herramientas profesionales</p>
+        </div>
+        
+        <div class="button-grid">
+            <a href="{% url 'join_pdf' %}" class="tool-button unite-btn">
+                <div class="button-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14,2 14,8 20,8"/>
+                        <line x1="12" y1="18" x2="12" y2="12"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                </div>
+                <div class="button-content">
+                    <h3>Unir PDFs</h3>
+                    <p>Combina múltiples archivos en uno solo</p>
+                </div>
+                <div class="button-glow"></div>
+            </a>
+            
+            <a href="{% url 'split_pdf' %}" class="tool-button split-btn">
+                <div class="button-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="8" cy="18" r="4"/>
+                        <path d="m12 18 2-2m0 0 2-2m-2 2-2-2m2 2 2 2"/>
+                        <path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v7"/>
+                    </svg>
+                </div>
+                <div class="button-content">
+                    <h3>Dividir PDFs</h3>
+                    <p>Separa páginas específicas</p>
+                </div>
+                <div class="button-glow"></div>
+            </a>
+            
+            <a href="{% url 'compress_pdf' %}" class="tool-button compress-btn">
+                <div class="button-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="m21 16-4 4-4-4"/>
+                        <path d="M17 20V4"/>
+                        <path d="m3 8 4-4 4 4"/>
+                        <path d="M7 4v16"/>
+                    </svg>
+                </div>
+                <div class="button-content">
+                    <h3>Comprimir PDFs</h3>
+                    <p>Reduce el tamaño sin perder calidad</p>
+                </div>
+                <div class="button-glow"></div>
+            </a>
+            
+            <a href="{% url 'rotate_pdf' %}" class="tool-button rotate-btn"> 
+                <div class="button-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M8 16H3v5"/>
+                    </svg>
+                </div>
+                <div class="button-content">
+                    <h3>Rotar PDFs</h3>
+                    <p>Ajusta la orientación de páginas</p>
+                </div>
+                <div class="button-glow"></div>
+            </a>
+        </div>
+        
+        <div class="features-section">
+            <div class="feature">
+                <h4>Seguro y Privado</h4>
+                <p>Tus archivos se procesan localmente</p>
+            </div>
+            <div class="feature">
+                <h4>Rápido y Eficiente</h4>
+                <p>Procesamiento optimizado</p>
+            </div>
+            <div class="feature">
+                <h4>Calidad Profesional</h4>
+                <p>Mantiene la calidad original</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+{% endblock %}

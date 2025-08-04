@@ -1,0 +1,134 @@
+{% extends 'layout/nav.html' %}
+{% load static %}
+{% block cont %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprimir PDF</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/compress.css' %}">
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="background-effects">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header Section -->
+        <div class="header-section">
+            <div class="tool-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="m21 16-4 4-4-4"/>
+                    <path d="M17 20V4"/>
+                    <path d="m3 8 4-4 4 4"/>
+                    <path d="M7 4v16"/>
+                </svg>
+            </div>
+            <h1>Comprimir PDFs</h1>
+            <p class="subtitle">Reduce el tamaño de tu documento PDF sin perder calidad</p>
+        </div>
+        
+        <!-- Main Card -->
+        <div class="main-card">
+            <form method="post" enctype="multipart/form-data" class="compress-form">
+                {% csrf_token %}
+                
+                <!-- Upload Area -->
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m21 16-4 4-4-4"/>
+                            <path d="M17 20V4"/>
+                            <path d="m3 8 4-4 4 4"/>
+                            <path d="M7 4v16"/>
+                        </svg>
+                    </div>
+                    <h3>Selecciona un archivo PDF</h3>
+                    <p>Haz clic para elegir el archivo que deseas comprimir</p>
+                    <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required hidden>
+                    <button type="button" class="select-btn" id="selectBtn">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="17,8 12,3 7,8"/>
+                            <line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        Seleccionar PDF
+                    </button>
+                </div>
+
+                <!-- Compress Button (hidden initially) -->
+                <div class="compress-options" id="compressOptions" style="display: none;">
+                    <button type="submit" class="btn btn-success">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m21 16-4 4-4-4"/>
+                            <path d="M17 20V4"/>
+                            <path d="m3 8 4-4 4 4"/>
+                            <path d="M7 4v16"/>
+                        </svg>
+                        Comprimir PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Messages del servidor (Django) -->
+        {% if message %}
+            <div class="message-container">
+                <div class="message {{ status }}">
+                    <div class="message-icon">
+                        {% if status == 'success' %}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="20,6 9,17 4,12"/>
+                            </svg>
+                        {% elif status == 'error' %}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="15" y1="9" x2="9" y2="15"/>
+                                <line x1="9" y1="9" x2="15" y2="15"/>
+                            </svg>
+                        {% else %}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="12"/>
+                                <line x1="12" y1="16" x2="12.01" y2="16"/>
+                            </svg>
+                        {% endif %}
+                    </div>
+                    <span>{{ message }}</span>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Instructions -->
+        <div class="instructions-card">
+            <h4>Instrucciones:</h4>
+            <ul>
+                <li>Selecciona el archivo PDF que deseas comprimir</li>
+                <li>Arrastra y suelta el archivo o haz clic para seleccionar</li>
+                <li>El sistema aplicará compresión automática optimizada</li>
+                <li>El archivo comprimido se descargará automáticamente</li>
+                <li>Tamaño máximo recomendado: 50MB por archivo</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Messages dinámicos (JavaScript) -->
+    <div id="messages" class="messages"></div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Comprimiendo PDF...</p>
+    </div>
+
+    <!-- Importar JavaScript -->
+    <script src="{% static 'script/compress.js' %}"></script>
+</body>
+</html>
+{% endblock %}
