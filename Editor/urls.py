@@ -7,4 +7,6 @@ urlpatterns = [
     path('split/', views.split_pdf, name='split_pdf'),
     path('compres/', views.compress_pdf_view, name='compress_pdf'),
     path('rotar/', views.rotate_pdf, name='rotate_pdf'),
+    path('desbloquear/', views.unlock_pdf_view, name='unlock_pdf'),
+    path('check-pdf-status/', views.check_pdf_status, name='check_pdf_status'),
 ]

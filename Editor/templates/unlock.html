@@ -1,0 +1,271 @@
+{% extends 'layout/nav.html' %} {% load static %} {% block cont %}
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Desbloquear PDF</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/unlock.css' %}" />
+  </head>
+  <body>
+    <!-- Background Effects -->
+    <div class="background-effects">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+    </div>
+
+    <div class="container">
+      <!-- Header Section -->
+      <div class="header-section">
+        <div class="tool-icon">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <circle cx="12" cy="16" r="1" />
+            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+          </svg>
+        </div>
+        <h1>Desbloquear PDF</h1>
+        <p class="subtitle">
+          Remueve la contraseña de tu documento PDF protegido
+        </p>
+      </div>
+
+      <!-- Main Card -->
+      <div class="main-card">
+        <!-- Upload Form -->
+        <form
+          method="post"
+          enctype="multipart/form-data"
+          class="unlock-form"
+          id="unlockForm"
+        >
+          {% csrf_token %}
+
+          <div class="drop-zone" id="dropZone">
+            <div class="drop-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                />
+                <polyline points="14,2 14,8 20,8" />
+                <rect x="8" y="12" width="8" height="6" rx="1" />
+                <circle cx="12" cy="15" r="1" />
+              </svg>
+            </div>
+            <h3>Selecciona tu PDF protegido</h3>
+            <p>Arrastra y suelta el archivo o haz clic para seleccionar</p>
+            <!-- CORREGIDO: Agregado autocomplete -->
+            <input
+              type="file"
+              id="pdf_file"
+              name="pdf_file"
+              accept=".pdf"
+              autocomplete="off"
+              style="display: none"
+            />
+            <button type="button" class="select-btn" id="selectBtn">
+              <svg
+                class="btn-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17,8 12,3 7,8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              Seleccionar PDF
+            </button>
+          </div>
+
+          <!-- Selected File Display -->
+          <div class="selected-file" id="selectedFile" style="display: none">
+            <div class="file-info">
+              <div class="file-preview" id="filePreview">
+                <canvas class="pdf-thumbnail" id="pdfThumbnail"></canvas>
+                <div class="preview-loading" id="previewLoading">
+                  <svg
+                    class="loading-spinner"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M21 12a9 9 0 11-6.219-8.56" />
+                  </svg>
+                </div>
+              </div>
+              <div class="file-details">
+                <span class="file-name" id="fileName"></span>
+                <span class="file-size" id="fileSize"></span>
+                <div class="file-status" id="fileStatus">
+                  <span class="status-icon">🔒</span>
+                  <span class="status-text">Verificando estado...</span>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="remove-file" id="removeBtn">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+          <!-- Password Section -->
+          <div
+            class="password-section"
+            id="passwordSection"
+            style="display: none"
+          >
+            <div class="password-field">
+              <label for="password">Contraseña del PDF:</label>
+              <div class="password-input-container">
+                <input
+                  type="text"
+                  name="username"
+                  id="username"
+                  style="display: none"
+                  autocomplete="username"
+                />
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  class="password-input"
+                  placeholder="Ingresa la contraseña"
+                  autocomplete="current-password"
+                />
+                <button
+                  type="button"
+                  class="toggle-password"
+                  id="togglePassword"
+                >
+                  <svg
+                    class="eye-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <svg
+                    class="eye-off-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    style="display: none"
+                  >
+                    <path
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                    />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                </button>
+              </div>
+              <div class="password-help">
+                <small
+                  >💡 Ingresa la contraseña que usas para abrir este PDF</small
+                >
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-success"
+              id="unlockBtn"
+              disabled
+            >
+              <svg
+                class="btn-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 5-5 5 5 0 0 1 5 5v4" />
+              </svg>
+              <span id="unlockBtnText">Desbloquear PDF</span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Messages -->
+      <div id="messages" class="messages"></div>
+
+      <!-- Instructions -->
+      <div class="instructions-card">
+        <h4>Instrucciones:</h4>
+        <ul>
+          <li>
+            <strong>Selecciona tu PDF:</strong> Arrastra o selecciona el archivo
+            PDF protegido con contraseña
+          </li>
+          <li>
+            <strong>Verifica el estado:</strong> El sistema detectará
+            automáticamente si el PDF está protegido
+          </li>
+          <li>
+            <strong>Ingresa la contraseña:</strong> Proporciona la contraseña
+            correcta del documento
+          </li>
+          <li>
+            <strong>Descarga el resultado:</strong> Obtendrás una versión sin
+            contraseña del PDF
+          </li>
+          <li>
+            El archivo original no se modifica, se genera una nueva versión
+          </li>
+          <li>Todos los datos se procesan de forma segura y no se almacenan</li>
+          <li>Tamaño máximo recomendado: 50MB por archivo</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" style="display: none">
+      <div class="loading-content">
+        <div class="loading-spinner">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M21 12a9 9 0 11-6.219-8.56" />
+          </svg>
+        </div>
+        <p id="loadingText">Procesando PDF...</p>
+      </div>
+    </div>
+
+    <script src="{% static 'script/unlock.js' %}"></script>
+  </body>
+</html>
+{% endblock %}

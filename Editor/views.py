@@ -285,3 +285,175 @@ def rotate_pdf(request):
                 except OSError:
                     pass
     return render(request, 'rotar.html')
+
+def unlock_pdf_view(request):
+    """Vista para remover contraseña de PDFs protegidos"""
+    if request.method == 'POST':
+        uploaded_file = request.FILES.get('pdf_file')
+        password = request.POST.get('password')
+
+        # Validaciones básicas
+        if not uploaded_file:
+            return JsonResponse({"status": "error", "message": "No se seleccionó ningún archivo PDF."}, status=400)
+
+        if not uploaded_file.name.lower().endswith('.pdf'):
+            return JsonResponse({"status": "error", "message": "El archivo debe ser un PDF válido."}, status=400)
+
+        if not password or not password.strip():
+            return JsonResponse({"status": "error", "message": "La contraseña es requerida."}, status=400)
+
+        fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+        input_pdf_path = None
+        output_pdf_path = None
+        
+        try:
+            # Guardar archivo temporal de entrada
+            input_filename = fs.save(uploaded_file.name, uploaded_file)
+            input_pdf_path = fs.path(input_filename)
+            
+            # Verificar primero si el PDF está protegido
+            pdf_info = pdf_processor.verificar_pdf_protegido(input_pdf_path)
+            
+            if pdf_info['error']:
+                return JsonResponse({"status": "error", "message": f"Error al verificar PDF: {pdf_info['error']}"}, status=400)
+            
+            if not pdf_info['is_encrypted']:
+                return JsonResponse({"status": "error", "message": "El PDF no está protegido con contraseña."}, status=400)
+            
+            # Crear nombre para archivo de salida
+            base_name, ext = os.path.splitext(uploaded_file.name)
+            clean_base_name = pdf_processor.clean_filename(base_name)
+            output_filename = f"{clean_base_name}_sin_contraseña{ext}"
+            output_pdf_path = os.path.join(settings.MEDIA_ROOT, output_filename)
+            
+            print(f"Intentando remover contraseña del PDF: {uploaded_file.name}")
+            print(f"Tamaño del archivo: {pdf_info['file_size']} bytes")
+            
+            # Llamar a la función para remover contraseña
+            success = pdf_processor.remover_contraseña_pdf(
+                input_pdf_path, 
+                output_pdf_path, 
+                password.strip()
+            )
+            
+            if success:
+                # Verificar que el archivo de salida se creó correctamente
+                if not os.path.exists(output_pdf_path):
+                    return JsonResponse({"status": "error", "message": "No se pudo generar el archivo sin contraseña."}, status=500)
+                
+                output_size = os.path.getsize(output_pdf_path)
+                if output_size == 0:
+                    return JsonResponse({"status": "error", "message": "El archivo generado está vacío."}, status=500)
+                
+                print(f"✅ Contraseña removida exitosamente. Archivo de salida: {output_size} bytes")
+                
+                # Leer y enviar el archivo
+                with open(output_pdf_path, 'rb') as pdf_file:
+                    file_content = pdf_file.read()
+                    
+                response = HttpResponse(file_content, content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="{output_filename}"'
+                
+                return response
+            else:
+                return JsonResponse({"status": "error", "message": "No se pudo remover la contraseña del PDF."}, status=500)
+
+        except ValueError as e:
+            # Errores de validación (contraseña incorrecta, etc.)
+            error_msg = str(e)
+            if "contraseña incorrecta" in error_msg.lower():
+                return JsonResponse({"status": "error", "message": "Contraseña incorrecta. Verifica e intenta nuevamente."}, status=400)
+            elif "no está protegido" in error_msg.lower():
+                return JsonResponse({"status": "error", "message": "El PDF no está protegido con contraseña."}, status=400)
+            else:
+                return JsonResponse({"status": "error", "message": error_msg}, status=400)
+                
+        except FileNotFoundError as e:
+            return JsonResponse({"status": "error", "message": "Archivo no encontrado."}, status=404)
+            
+        except Exception as e:
+            print(f"❌ ERROR en unlock_pdf_view: {e}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({"status": "error", "message": f"Error inesperado: {str(e)}"}, status=500)
+            
+        finally:
+            # Limpiar archivos temporales
+            if input_pdf_path and os.path.exists(input_pdf_path):
+                try:
+                    os.remove(input_pdf_path)
+                    print(f"Archivo temporal de entrada eliminado: {input_pdf_path}")
+                except OSError as e:
+                    print(f"Error eliminando archivo temporal de entrada: {e}")
+                    
+            if output_pdf_path and os.path.exists(output_pdf_path):
+                try:
+                    os.remove(output_pdf_path)
+                    print(f"Archivo temporal de salida eliminado: {output_pdf_path}")
+                except OSError as e:
+                    print(f"Error eliminando archivo temporal de salida: {e}")
+
+    return render(request, 'unlock.html')
+
+def check_pdf_status(request):
+    """Vista AJAX para verificar si un PDF está protegido"""
+    if request.method == 'POST':
+        uploaded_file = request.FILES.get('pdf_file')
+        
+        if not uploaded_file:
+            return JsonResponse({"status": "error", "message": "No se proporcionó archivo"}, status=400)
+        
+        if not uploaded_file.name.lower().endswith('.pdf'):
+            return JsonResponse({"status": "error", "message": "El archivo debe ser un PDF"}, status=400)
+        
+        fs = FileSystemStorage(location=settings.MEDIA_ROOT)
+        temp_path = None
+        
+        try:
+            # Guardar temporalmente para verificar
+            temp_filename = fs.save(f"temp_check_{uploaded_file.name}", uploaded_file)
+            temp_path = fs.path(temp_filename)
+            
+            # Verificar estado del PDF
+            pdf_info = pdf_processor.verificar_pdf_protegido(temp_path)
+            
+            return JsonResponse({
+                "status": "success",
+                "data": {
+                    "is_encrypted": pdf_info['is_encrypted'],
+                    "needs_password": pdf_info['needs_password'],
+                    "total_pages": pdf_info['total_pages'],
+                    "file_size": pdf_info['file_size'],
+                    "file_size_formatted": format_file_size(pdf_info['file_size']),
+                    "error": pdf_info['error']
+                }
+            })
+            
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+            
+        finally:
+            # Limpiar archivo temporal
+            if temp_path and os.path.exists(temp_path):
+                try:
+                    os.remove(temp_path)
+                except OSError:
+                    pass
+    
+    return JsonResponse({"status": "error", "message": "Método no permitido"}, status=405)
+
+def format_file_size(bytes_size):
+    """Formatea el tamaño de archivo en formato legible"""
+    if bytes_size == 0:
+        return "0 Bytes"
+    
+    k = 1024
+    sizes = ["Bytes", "KB", "MB", "GB"]
+    i = 0
+    
+    while bytes_size >= k and i < len(sizes) - 1:
+        bytes_size /= k
+        i += 1
+    
+    return f"{bytes_size:.2f} {sizes[i]}"
+

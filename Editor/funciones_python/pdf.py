@@ -342,3 +342,165 @@ def parse_page_specification(pages_spec: str, total_pages: int) -> list:
             unique_pages.append(page)
     
     return unique_pages
+
+def remover_contraseña_pdf(input_pdf_path: str, output_pdf_path: str, password: str) -> bool:
+    """
+    Remueve la contraseña de un PDF protegido y genera una versión sin encriptación.
+    
+    Args:
+        input_pdf_path: Ruta del PDF con contraseña
+        output_pdf_path: Ruta donde guardar el PDF sin contraseña
+        password: Contraseña del PDF
+    
+    Returns:
+        bool: True si se removió la contraseña exitosamente
+        
+    Raises:
+        FileNotFoundError: Si el archivo de entrada no existe
+        ValueError: Si la contraseña es incorrecta o el PDF no está encriptado
+        Exception: Para otros errores durante el procesamiento
+    """
+    if not os.path.exists(input_pdf_path):
+        raise FileNotFoundError(f"Archivo PDF no encontrado: {input_pdf_path}")
+    
+    if not password or not password.strip():
+        raise ValueError("La contraseña no puede estar vacía")
+    
+    try:
+        # Intentar abrir el PDF
+        reader = PdfReader(input_pdf_path)
+        
+        # Verificar si el PDF está encriptado
+        if not reader.is_encrypted:
+            raise ValueError("El PDF no está protegido con contraseña")
+        
+        # Intentar desencriptar con la contraseña proporcionada
+        decrypt_result = reader.decrypt(password)
+        
+        if decrypt_result == 0:
+            raise ValueError("Contraseña incorrecta. No se pudo desencriptar el PDF")
+        elif decrypt_result == 1:
+            print("✓ PDF desencriptado exitosamente (contraseña de usuario)")
+        elif decrypt_result == 2:
+            print("✓ PDF desencriptado exitosamente (contraseña de propietario)")
+        
+        # Verificar que el PDF tiene páginas
+        total_pages = len(reader.pages)
+        if total_pages == 0:
+            raise ValueError("El PDF no contiene páginas válidas")
+        
+        print(f"PDF desencriptado: {total_pages} páginas encontradas")
+        
+        # Crear un nuevo PDF sin encriptación
+        writer = PdfWriter()
+        
+        # Copiar todas las páginas al nuevo PDF
+        for page_num in range(total_pages):
+            try:
+                page = reader.pages[page_num]
+                writer.add_page(page)
+            except Exception as e:
+                print(f"Advertencia: Error al procesar página {page_num + 1}: {e}")
+                continue
+        
+        # Verificar que se agregaron páginas
+        if len(writer.pages) == 0:
+            raise Exception("No se pudieron procesar las páginas del PDF")
+        
+        # Crear directorio de salida si no existe
+        output_dir = os.path.dirname(output_pdf_path)
+        if output_dir and not os.path.exists(output_dir):
+            os.makedirs(output_dir, exist_ok=True)
+        
+        # Guardar el PDF sin contraseña
+        with open(output_pdf_path, 'wb') as output_file:
+            writer.write(output_file)
+        
+        # Verificar que el archivo se creó correctamente
+        if not os.path.exists(output_pdf_path):
+            raise Exception("No se pudo crear el archivo de salida")
+        
+        file_size = os.path.getsize(output_pdf_path)
+        if file_size == 0:
+            raise Exception("El archivo de salida está vacío")
+        
+        print(f"✓ PDF sin contraseña guardado exitosamente")
+        print(f"  - Páginas procesadas: {len(writer.pages)}")
+        print(f"  - Tamaño del archivo: {file_size} bytes")
+        print(f"  - Ubicación: {output_pdf_path}")
+        
+        return True
+        
+    except PdfReadError as e:
+        if "Invalid PDF" in str(e):
+            raise Exception(f"El archivo no es un PDF válido: {e}")
+        elif "Bad decrypt" in str(e):
+            raise ValueError("Contraseña incorrecta o PDF corrupto")
+        else:
+            raise Exception(f"Error al leer el PDF: {e}")
+    
+    except ValueError as e:
+        # Re-lanzar errores de validación tal como están
+        raise e
+    
+    except Exception as e:
+        print(f"❌ ERROR en remover_contraseña_pdf: {e}")
+        traceback.print_exc()
+        raise Exception(f"Error inesperado al remover contraseña: {e}")
+
+def verificar_pdf_protegido(input_pdf_path: str) -> dict:
+    """
+    Verifica si un PDF está protegido con contraseña y devuelve información sobre su estado.
+    
+    Args:
+        input_pdf_path: Ruta del archivo PDF
+    
+    Returns:
+        dict: Información sobre el estado del PDF
+        {
+            'is_encrypted': bool,
+            'total_pages': int,
+            'file_size': int,
+            'needs_password': bool,
+            'error': str or None
+        }
+    """
+    result = {
+        'is_encrypted': False,
+        'total_pages': 0,
+        'file_size': 0,
+        'needs_password': False,
+        'error': None
+    }
+    
+    try:
+        if not os.path.exists(input_pdf_path):
+            result['error'] = "Archivo no encontrado"
+            return result
+        
+        # Obtener tamaño del archivo
+        result['file_size'] = os.path.getsize(input_pdf_path)
+        
+        # Intentar leer el PDF
+        reader = PdfReader(input_pdf_path)
+        
+        # Verificar si está encriptado
+        result['is_encrypted'] = reader.is_encrypted
+        result['needs_password'] = reader.is_encrypted
+        
+        if not reader.is_encrypted:
+            # Si no está encriptado, obtener número de páginas
+            result['total_pages'] = len(reader.pages)
+        else:
+            # Si está encriptado, no podemos obtener las páginas sin contraseña
+            result['total_pages'] = 0
+        
+        return result
+        
+    except PdfReadError as e:
+        result['error'] = f"Error al leer PDF: {str(e)}"
+        return result
+    except Exception as e:
+        result['error'] = f"Error inesperado: {str(e)}"
+        return result
+
