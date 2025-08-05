@@ -214,6 +214,9 @@ h1 {
 .rotate-btn .button-icon {
   background: linear-gradient(135deg, #f59e0b, #ef4444);
 }
+.unlock-btn .button-icon {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
 
 .button-content h3 {
   font-size: 1.5rem;
