@@ -954,3 +954,10 @@ body {
   width: 16px;
   height: 16px;
 }
+#uploadArea:hover,
+#uploadArea.drag-over {
+  border: 2px dashed #8b5cf6;
+  background-color: rgba(86, 68, 170, 0.1);
+  transform: translateY(-2px);
+}
+

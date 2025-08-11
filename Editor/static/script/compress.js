@@ -82,47 +82,44 @@ class PDFCompressor {
     return dt.files;
   }
 
-  async handleFileSelect(event) {
+async handleFileSelect(event) {
     const file = event.target.files[0];
 
     if (!file) {
-      this.clearFile();
-      return;
+        this.clearFile();
+        return;
     }
 
     if (file.type !== "application/pdf") {
-      this.showMessage("Por favor selecciona un archivo PDF válido", "error");
-      this.clearFile();
-      return;
+        this.showMessage("Por favor selecciona un archivo PDF válido", "error");
+        this.clearFile();
+        return;
     }
 
     // Validar tamaño (50MB máximo)
-    const maxSize = 50 * 1024 * 1024; // 50MB
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
-      this.showMessage(
-        "El archivo es demasiado grande. Máximo 50MB permitido",
-        "error"
-      );
-      this.clearFile();
-      return;
+        this.showMessage("El archivo es demasiado grande. Máximo 50MB permitido", "error");
+        this.clearFile();
+        return;
     }
 
+    // 🔹 Validar que el PDF no esté corrupto usando pdf.js
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        await pdfDoc.getPage(1); // intenta leer la primera página
+    } catch (error) {
+        this.showMessage("El archivo PDF está corrupto ", "error");
+        this.clearFile();
+        return;
+    }
+
+    // Si pasa todas las validaciones
     this.pdfFile = file;
     this.updateFileDisplay(file);
-
-    try {
-      this.showMessage(
-        `PDF cargado exitosamente`,
-        "success"
-      );
-    } catch (error) {
-      console.error("Error loading PDF:", error);
-      this.showMessage("Error al cargar el PDF", "error");
-      this.clearFile();
-    } finally {
-      this.showLoading(false);
-    }
-  }
+    this.showMessage(`PDF cargado exitosamente`, "success");
+}
 
   updateFileDisplay(file) {
     // Ocultar upload area y mostrar archivo seleccionado

@@ -15,25 +15,23 @@ def join_pdfs(pdf_file_paths: list, output_directory: str):
   output_filename = "pdfs_combinados.pdf"
   output_path = os.path.join(output_directory, output_filename)
 
-  try:
-      for pdf_path in pdf_file_paths:
-          if not os.path.exists(pdf_path):
-              raise FileNotFoundError(f"Archivo no encontrado: {pdf_path}")
-          
-          # Validar que el archivo sea un PDF válido
-          try:
-              with open(pdf_path, 'rb') as f:
-                  PdfReader(f)
-          except PdfReadError:
+  try: 
+      for pdf_path in pdf_file_paths: # Iterar sobre los archivos PDF
+          if not os.path.exists(pdf_path): 
+              raise FileNotFoundError(f"Archivo no encontrado: {pdf_path}") 
+          try:  
+              with open(pdf_path, 'rb') as f:  # Abrir el archivo PDF
+                  PdfReader(f) # Leer el archivo PDF
+          except PdfReadError:  # Si no es un PDF válido o está corrupto, lanzar error
               raise ValueError(f"El archivo {pdf_path} no es un PDF válido o está corrupto.")
           
-          merger.append(pdf_path)
+          merger.append(pdf_path) # Agregar cada PDF al merger
       
-      merger.write(output_path)
-      return output_path
-  except Exception as e:
-      raise Exception(f"Error al unir PDFs: {str(e)}")
-  finally:
+      merger.write(output_path) # Guardar el merger en el archivo de salida
+      return output_path # Devolver la ruta del archivo de salida
+  except Exception as e: # Si ocurre algún error
+      raise Exception(f"Error al unir PDFs: {str(e)}") 
+  finally: # Asegurar que se cierra el merger
       merger.close()
 
 def split_pdf_by_range(input_pdf_path: str, output_directory: str, start_page: int, end_page: int):
@@ -47,7 +45,7 @@ def split_pdf_by_range(input_pdf_path: str, output_directory: str, start_page: i
       reader = PdfReader(input_pdf_path)
       num_pages = len(reader.pages)
 
-      if not (1 <= start_page <= num_pages and 1 <= end_page <= num_pages):
+      if not (1 <= start_page <= num_pages and 1 <= end_page <= num_pages): 
           raise ValueError(
               f"Las páginas de inicio ({start_page}) o fin ({end_page}) "
               f"están fuera del rango válido (1 a {num_pages})."
@@ -55,10 +53,10 @@ def split_pdf_by_range(input_pdf_path: str, output_directory: str, start_page: i
       if start_page > end_page:
           raise ValueError(f"La página de inicio ({start_page}) no puede ser mayor que la página final ({end_page}).")
 
-      writer = PdfWriter()
+      writer = PdfWriter() 
       
-      for i in range(start_page - 1, end_page):
-          writer.add_page(reader.pages[i])
+      for i in range(start_page - 1, end_page): 
+          writer.add_page(reader.pages[i]) 
       
       base_name = os.path.splitext(os.path.basename(input_pdf_path))[0]
       output_pdf_name = f"{base_name}_rango_{start_page}_a_{end_page}.pdf"
@@ -92,20 +90,20 @@ def zip_pdfs(input_pdf_path, output_dir, pages_per_file, original_filename_base)
       
       with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zf:
           for i in range(0, total_pages, pages_per_file):
-              writer = PdfWriter()
+              writer = PdfWriter() 
               start_page = i
-              end_page = min(i + pages_per_file, total_pages)
+              end_page = min(i + pages_per_file, total_pages)  
               
-              for page_num in range(start_page, end_page):
-                  writer.add_page(reader.pages[page_num])
+              for page_num in range(start_page, end_page): 
+                  writer.add_page(reader.pages[page_num]) 
               
-              split_pdf_name = f"{original_filename_base}_parte_{start_page + 1}-{end_page}.pdf"
+              split_pdf_name = f"{original_filename_base}_parte_{start_page + 1}-{end_page}.pdf" 
               
-              temp_split_pdf_path = os.path.join(output_dir, split_pdf_name)
-              with open(temp_split_pdf_path, "wb") as output_pdf:
-                  writer.write(output_pdf)
+              temp_split_pdf_path = os.path.join(output_dir, split_pdf_name) 
+              with open(temp_split_pdf_path, "wb") as output_pdf: 
+                  writer.write(output_pdf) 
               
-              zf.write(temp_split_pdf_path, arcname=split_pdf_name)
+              zf.write(temp_split_pdf_path, arcname=split_pdf_name) 
               
               # Limpiar archivo temporal
               os.remove(temp_split_pdf_path)
@@ -127,7 +125,7 @@ def comprimir_pdf(input_pdf_path: str, output_pdf_path: str) -> bool:
       raise FileNotFoundError(f"Archivo no encontrado: {input_pdf_path}")
 
   try:
-      doc = fitz.open(input_pdf_path)
+      doc = fitz.open(input_pdf_path) 
       
       # Verificar que el documento se abrió correctamente
       if doc.page_count == 0:
@@ -141,7 +139,7 @@ def comprimir_pdf(input_pdf_path: str, output_pdf_path: str) -> bool:
       )
       
       # Guardar con compresión
-      doc.save(
+      doc.save( 
           output_pdf_path,
           garbage=3,          # Limpieza de objetos no utilizados
           deflate=True,       # Compresión deflate
@@ -173,8 +171,8 @@ def rotar_pdf(input_pdf_path: str, output_pdf_path: str, page_rotations: dict) -
       
       rotations_applied = 0
       for page_index_str, angle_value in page_rotations.items():
-          try:
-              page_index = int(page_index_str) 
+          try: 
+              page_index = int(page_index_str)  
               angle = int(angle_value)
               
               # Validar ángulo de rotación
@@ -182,7 +180,7 @@ def rotar_pdf(input_pdf_path: str, output_pdf_path: str, page_rotations: dict) -
                   print(f"Advertencia: Ángulo {angle} no es válido para página {page_index}. Debe ser 0, 90, 180 o 270. Ignorando.")
                   continue
               
-              if 0 <= page_index < doc.page_count:
+              if 0 <= page_index < doc.page_count: 
                   pagina = doc[page_index] 
                   pagina.set_rotation(angle) 
                   print(f"✓ Página {page_index + 1} rotada a {angle}°.")
@@ -193,14 +191,14 @@ def rotar_pdf(input_pdf_path: str, output_pdf_path: str, page_rotations: dict) -
               print(f"Advertencia: Error al procesar rotación para página {page_index_str}: {e}. Ignorando.")
               continue
 
-      if rotations_applied > 0:
+      if rotations_applied > 0: 
           print(f"DEBUG: Rotaciones aplicadas > 0. Intentando guardar PDF.")
           if doc.is_closed:
               raise Exception("El documento PDF ya está cerrado antes de intentar guardar. Esto indica un problema previo.")
           
-          doc.save(output_pdf_path, 
-                  garbage=4,          
-                  deflate=True,       
+          doc.save(output_pdf_path,   
+                  garbage=4,           
+                  deflate=True,      
                   clean=True,         
                   pretty=False)       
           print(f"DEBUG: doc.save() completado.")
@@ -255,14 +253,12 @@ def extract_specific_pages(input_pdf_path: str, output_directory: str, pages_spe
         if total_pages == 0:
             raise ValueError("El PDF no contiene páginas.")
 
-        # Parsear la especificación de páginas
-        page_numbers = parse_page_specification(pages_specification, total_pages)
+        page_numbers = parse_page_specification(pages_specification, total_pages) 
         
         if not page_numbers:
             raise ValueError("No se especificaron páginas válidas.")
 
-        # Crear un nuevo PDF con las páginas especificadas
-        writer = PdfWriter()
+        writer = PdfWriter() 
         
         # Agregar páginas en el orden especificado
         for page_num in page_numbers:

@@ -7,13 +7,11 @@ async function loadPDFJS() {
       script.type = "module";
       script.src = "/static/pdfjs/build/pdf.js";
       document.head.appendChild(script);
-
       await new Promise((resolve, reject) => {
         script.onload = resolve;
         script.onerror = reject;
       });
     }
-
     window.pdfjsLib.GlobalWorkerOptions.workerSrc =
       "/static/pdfjs/build/pdf.worker.js";
     pdfjsLib = window.pdfjsLib;
@@ -26,8 +24,8 @@ async function loadPDFJS() {
 class PDFMerger {
   constructor() {
     this.currentFiles = [];
-
     this.selectedFiles = [];
+    this.draggedIndex = null;
     this.dropZone = document.getElementById("dropZone");
     this.fileInput = document.getElementById("pdf_files");
     this.fileList = document.getElementById("fileList");
@@ -35,7 +33,6 @@ class PDFMerger {
     this.submitBtn = document.getElementById("submitBtn");
     this.uploadForm = document.getElementById("uploadForm");
     this.messages = document.getElementById("messages");
-
     this.bindEvents();
   }
 
@@ -44,54 +41,53 @@ class PDFMerger {
     this.dropZone.addEventListener("dragover", (e) => this.handleDragOver(e));
     this.dropZone.addEventListener("dragleave", (e) => this.handleDragLeave(e));
     this.dropZone.addEventListener("drop", (e) => this.handleDrop(e));
-
+    
     // Click en drop zone → input
     this.dropZone.addEventListener("click", () => this.fileInput.click());
-
+    
     // Selección de archivos
     this.fileInput.addEventListener("change", (e) => this.handleFileSelect(e));
-
+    
     // Envío de formulario
     this.uploadForm.addEventListener("submit", (e) => this.handleFormSubmit(e));
   }
 
-async handleFileSelect(e) {
+  async handleFileSelect(e) {
     const newFiles = Array.from(e.target.files);
     if (!newFiles.length) return;
 
     const maxFiles = 10;
     const totalFilesAfterAdd = this.selectedFiles.length + newFiles.length;
-
+    
     if (totalFilesAfterAdd > maxFiles) {
-        this.showMessage(`Solo puedes subir un máximo de ${maxFiles} archivos PDF.`, "error");
-        e.target.value = "";
-        return;
+      this.showMessage(`Solo puedes subir un máximo de ${maxFiles} archivos PDF.`, "error");
+      e.target.value = "";
+      return;
     }
 
     const pdfFiles = newFiles.filter((f) => f.type === "application/pdf");
     if (pdfFiles.length !== newFiles.length) {
-        this.showMessage(
-            "Algunos archivos no son PDFs válidos y fueron omitidos",
-            "warning"
-        );
+      this.showMessage(
+        "Algunos archivos no son PDFs válidos y fueron omitidos",
+        "warning"
+      );
     }
 
     const validFiles = [];
     for (let file of pdfFiles) {
-        const valid = await this.validatePdf(file);
-        if (valid) {
-            validFiles.push(file);
-        } else {
-            this.showMessage(`El archivo ${file.name} está corrupto`, "error");
-        }
+      const valid = await this.validatePdf(file);
+      if (valid) {
+        validFiles.push(file);
+      } else {
+        this.showMessage(`El archivo ${file.name} está corrupto`, "error");
+      }
     }
 
     if (validFiles.length) {
-        this.selectedFiles.push(...validFiles); 
-        this.addFiles(validFiles);
+      this.selectedFiles.push(...validFiles);
+      this.addFiles(validFiles);
     }
-}
-
+  }
 
   async validatePdf(file) {
     try {
@@ -143,7 +139,6 @@ async handleFileSelect(e) {
     this.fileList.style.display = "block";
     this.submitBtn.style.display = "block";
     this.submitBtn.disabled = false;
-
     this.renderFileList();
   }
 
@@ -161,31 +156,62 @@ async handleFileSelect(e) {
     fileItem.className = "file-item";
     fileItem.draggable = true;
     fileItem.dataset.index = index;
-
     fileItem.innerHTML = `
-            <div class="drag-handle">☰</div>
-            <div class="file-order-number">${index + 1}</div>
-            <div class="file-preview">
-                <canvas class="pdf-thumbnail"></canvas>
-                <div class="preview-loading">⏳</div>
-            </div>
-            <div class="file-info">
-                <div class="file-details">
-                    <span class="file-name">${file.name}</span>
-                    <span class="file-size">${this.formatFileSize(
-                      file.size
-                    )}</span>
-                </div>
-            </div>
-            <button type="button" class="remove-file" onclick="merger.removeFile(${index})">❌</button>
-        `;
+      <div class="drag-handle">☰</div>
+      <div class="file-order-number">${index + 1}</div>
+      <div class="file-preview">
+        <canvas class="pdf-thumbnail"></canvas>
+        <div class="preview-loading">⏳</div>
+      </div>
+      <div class="file-info">
+        <div class="file-details">
+          <span class="file-name">${file.name}</span>
+          <span class="file-size">${this.formatFileSize(file.size)}</span>
+        </div>
+      </div>
+      <button type="button" class="remove-file" onclick="merger.removeFile(${index})">❌</button>
+    `;
 
-    fileItem.addEventListener("dragstart", (e) => this.handleFileDragStart(e));
-    fileItem.addEventListener("dragover", (e) => this.handleFileDragOver(e));
-    fileItem.addEventListener("drop", (e) => this.handleFileDrop(e));
+    // Agregar event listeners para drag and drop
+    fileItem.addEventListener("dragstart", (e) => this.handleFileDragStart(e, index));
+    fileItem.addEventListener("dragover", (e) => this.handleFileDragOver(e, index));
+    fileItem.addEventListener("drop", (e) => this.handleFileDrop(e, index));
     fileItem.addEventListener("dragend", (e) => this.handleFileDragEnd(e));
 
     return fileItem;
+  }
+
+  // Métodos de drag and drop para reordenar archivos
+  handleFileDragStart(e, index) {
+    this.draggedIndex = index;
+    e.dataTransfer.effectAllowed = "move";
+    e.target.style.opacity = "0.5";
+  }
+
+  handleFileDragOver(e, index) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    
+    if (this.draggedIndex !== null && this.draggedIndex !== index) {
+      // Reordenar archivos
+      const draggedFile = this.currentFiles[this.draggedIndex];
+      this.currentFiles.splice(this.draggedIndex, 1);
+      this.currentFiles.splice(index, 0, draggedFile);
+      
+      this.draggedIndex = index;
+      this.updateDisplay();
+      this.updateFileInput();
+    }
+  }
+
+  handleFileDrop(e, index) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  handleFileDragEnd(e) {
+    e.target.style.opacity = "1";
+    this.draggedIndex = null;
   }
 
   async generatePreview(file, index) {
@@ -207,12 +233,11 @@ async handleFileSelect(e) {
       const targetWidth = 160;
       const targetHeight = 190;
       const viewport = page.getViewport({ scale: 1 });
-
       const scaleX = (targetWidth * 2) / viewport.width;
       const scaleY = (targetHeight * 2) / viewport.height;
       const scale = Math.min(scaleX, scaleY);
-
       const scaledViewport = page.getViewport({ scale });
+
       canvas.width = scaledViewport.width;
       canvas.height = scaledViewport.height;
       canvas.style.width = `${targetWidth}px`;
@@ -221,8 +246,7 @@ async handleFileSelect(e) {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
 
-      await page.render({ canvasContext: ctx, viewport: scaledViewport })
-        .promise;
+      await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
 
       loading.style.display = "none";
       canvas.style.display = "block";
@@ -241,12 +265,14 @@ async handleFileSelect(e) {
     this.showMessage(`Archivo "${fileName}" eliminado`, "success");
   }
 
-  clearFiles() {
+clearFiles() {
     this.currentFiles = [];
+    this.selectedFiles = []; 
     this.fileInput.value = "";
     this.updateDisplay();
     this.showMessage("Todos los archivos han sido eliminados", "success");
-  }
+}
+
 
   handleDragOver(e) {
     e.preventDefault();
@@ -261,11 +287,11 @@ async handleFileSelect(e) {
   handleDrop(e) {
     e.preventDefault();
     this.dropZone.classList.remove("drag-over");
-
+    
     const droppedFiles = Array.from(e.dataTransfer.files).filter(
       (file) => file.type === "application/pdf"
     );
-
+    
     if (droppedFiles.length) {
       this.handleFileSelect({ target: { files: droppedFiles } });
     } else {

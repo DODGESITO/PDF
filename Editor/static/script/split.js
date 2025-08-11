@@ -19,27 +19,28 @@ class PDFSplitter {
     this.loadPDFJS();
   }
 
-async loadPDFJS() {
-  try {
-    if (typeof window.pdfjsLib === "undefined") {
-      const script = document.createElement("script")
-      script.type = "module"
-      script.src = "/static/pdfjs/build/pdf.js"
-      document.head.appendChild(script)
+  async loadPDFJS() {
+    try {
+      if (typeof window.pdfjsLib === "undefined") {
+        const script = document.createElement("script");
+        script.type = "module";
+        script.src = "/static/pdfjs/build/pdf.js";
+        document.head.appendChild(script);
 
-      await new Promise((resolve, reject) => {
-        script.onload = resolve
-        script.onerror = reject
-      })
+        await new Promise((resolve, reject) => {
+          script.onload = resolve;
+          script.onerror = reject;
+        });
+      }
+
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "/static/pdfjs/build/pdf.worker.js";
+      pdfjsLib = window.pdfjsLib;
+      console.log("PDF.js cargado localmente");
+    } catch (error) {
+      console.warn("No se pudo cargar PDF.js local:", error);
     }
-
-    window.pdfjsLib.GlobalWorkerOptions.workerSrc = "/static/pdfjs/build/pdf.worker.js"
-    pdfjsLib = window.pdfjsLib
-    console.log("PDF.js cargado localmente")
-  } catch (error) {
-    console.warn("No se pudo cargar PDF.js local:", error)
   }
-}
 
   initElements() {
     // Elementos existentes
@@ -83,7 +84,6 @@ async loadPDFJS() {
 
     // Elementos de extracción
     this.extractSelected = document.getElementById("extractSelected");
-    this.extractSelectedBtn = document.getElementById("extractSelectedBtn");
     this.selectedCount = document.getElementById("selectedCount");
 
     // Elementos para sub-opciones de extract_pages
@@ -98,7 +98,14 @@ async loadPDFJS() {
   }
 
   bindEvents() {
-    // Eventos existentes
+    this.uploadArea.addEventListener("dragover", (e) =>
+      this.handleFileDragOver(e)
+    );
+    this.uploadArea.addEventListener("dragleave", () =>
+      this.handleFileDragLeave()
+    );
+    this.uploadArea.addEventListener("drop", (e) => this.handleFileDrop(e));
+
     this.selectBtn.addEventListener("click", () => this.fileInput.click());
     this.removeBtn.addEventListener("click", () => this.clearFile());
     this.fileInput.addEventListener("change", (e) => this.handleFileSelect(e));
@@ -132,11 +139,7 @@ async loadPDFJS() {
     if (this.nextGroupBtn) {
       this.nextGroupBtn.addEventListener("click", () => this.navigateGroup(1));
     }
-    if (this.extractSelectedBtn) {
-      this.extractSelectedBtn.addEventListener("click", () =>
-        this.extractSelectedPages()
-      );
-    }
+
 
     // Eventos para sub-opciones de extract_pages
     if (this.extractMethod) {
@@ -156,6 +159,31 @@ async loadPDFJS() {
       this.clearAllPagesBtn.addEventListener("click", () =>
         this.clearAllPages()
       );
+    }
+  }
+
+  handleFileDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.uploadArea.classList.add("drag-over");
+  }
+
+  handleFileDragLeave() {
+    this.uploadArea.classList.remove("drag-over");
+  }
+
+  handleFileDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    this.uploadArea.classList.remove("drag-over");
+
+    const file = event.dataTransfer.files[0];
+    if (file) {
+      // Simular que el input recibió el archivo
+      this.fileInput.files = event.dataTransfer.files;
+
+      // Procesar archivo con el mismo flujo que la selección manual
+      this.handleFileSelect({ target: { files: [file] } });
     }
   }
 
@@ -508,7 +536,6 @@ async loadPDFJS() {
 
     this.renderCurrentGroup();
     this.updateSelectedInfo();
-    this.updateExtractButton();
   }
 
   formatPageSpecification(pages) {
@@ -598,7 +625,6 @@ async loadPDFJS() {
 
     this.renderCurrentGroup();
     this.updateSelectedInfo();
-    this.updateExtractButton();
   }
 
   navigateGroup(direction) {
@@ -686,22 +712,9 @@ async loadPDFJS() {
     } seleccionada${count !== 1 ? "s" : ""}`;
   }
 
-  updateExtractButton() {
-    const count = this.selectedPages.size;
-    this.selectedCount.textContent = count;
-
-    if (count > 0) {
-      this.extractSelected.style.display = "block";
-      this.extractSelectedBtn.disabled = false;
-    } else {
-      this.extractSelected.style.display = "none";
-      this.extractSelectedBtn.disabled = true;
-    }
-  }
 
   showPreviewSection() {
     this.previewSection.style.display = "block";
-    this.updateExtractButton();
   }
 
   clearSelection() {
@@ -767,45 +780,65 @@ async loadPDFJS() {
   }
 
   selectAllPages() {
-    for (let pageNum = 1; pageNum <= this.totalPages; pageNum++) {
-      this.selectedPages.add(pageNum);
-    }
+  const startPage = this.currentGroup * this.pagesPerGroup + 1;
+  const endPage = Math.min(startPage + this.pagesPerGroup - 1, this.totalPages);
 
-    const sortedPages = Array.from(this.selectedPages).sort((a, b) => a - b);
-    if (this.pagesSpecification) {
-      this.pagesSpecification.value = this.formatPageSpecification(sortedPages);
-    }
-
-    this.renderCurrentGroup();
-    this.updateAllPagesSelectedInfo();
+  for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
+    this.selectedPages.add(pageNum);
   }
 
-  clearAllPages() {
-    this.selectedPages.clear();
-
-    if (this.pagesSpecification) {
-      this.pagesSpecification.value = "";
-    }
-
-    this.renderCurrentGroup();
-    this.updateAllPagesSelectedInfo();
+  const sortedPages = Array.from(this.selectedPages).sort((a, b) => a - b);
+  if (this.pagesSpecification) {
+    this.pagesSpecification.value = this.formatPageSpecification(sortedPages);
   }
+
+  this.renderCurrentGroup();
+  this.updateAllPagesSelectedInfo();
+}
+
+clearAllPages() {
+  const startPage = this.currentGroup * this.pagesPerGroup + 1;
+  const endPage = Math.min(startPage + this.pagesPerGroup - 1, this.totalPages);
+
+  for (let pageNum = startPage; pageNum <= endPage; pageNum++) {
+    this.selectedPages.delete(pageNum);
+  }
+
+  const sortedPages = Array.from(this.selectedPages).sort((a, b) => a - b);
+  if (this.pagesSpecification) {
+    this.pagesSpecification.value = this.formatPageSpecification(sortedPages);
+  }
+
+  this.renderCurrentGroup();
+  this.updateAllPagesSelectedInfo();
+}
 
   updateAllPagesSelectedInfo() {
     const count = this.selectedPages.size;
     this.updateSelectedInfo();
-    this.updateExtractButton();
   }
 
-  showVisualSelectionSection() {
+showVisualSelectionSection() {
     this.previewSection.style.display = "block";
-    if (this.selectAllPagesBtn) {
-      this.selectAllPagesBtn.style.display = "inline-flex";
+
+    const totalGroups = Math.ceil(this.totalPages / this.pagesPerGroup);
+
+    if (totalGroups > 1) {
+        if (this.selectAllPagesBtn) {
+            this.selectAllPagesBtn.style.display = "inline-flex";
+        }
+        if (this.clearAllPagesBtn) {
+            this.clearAllPagesBtn.style.display = "inline-flex";
+        }
+    } else {
+        if (this.selectAllPagesBtn) {
+            this.selectAllPagesBtn.style.display = "none";
+        }
+        if (this.clearAllPagesBtn) {
+            this.clearAllPagesBtn.style.display = "none";
+        }
     }
-    if (this.clearAllPagesBtn) {
-      this.clearAllPagesBtn.style.display = "inline-flex";
-    }
-  }
+}
 
   async handleSubmit(event) {
     event.preventDefault();
@@ -1018,6 +1051,6 @@ async loadPDFJS() {
 if (!window._pdfSplitterInitialized) {
   window._pdfSplitterInitialized = true;
   document.addEventListener("DOMContentLoaded", () => {
-    new PDFSplitter()
-  })
+    new PDFSplitter();
+  });
 }

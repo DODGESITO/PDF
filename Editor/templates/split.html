@@ -60,7 +60,7 @@
               </svg>
             </div>
             <h3>Selecciona un archivo PDF</h3>
-            <p>Haz clic para elegir el archivo que deseas dividir</p>
+            <p>Arrastra y suelta un archivo PDF aqui</p>
             <input type="file" id="pdfFile" accept=".pdf" hidden />
             <button type="button" class="select-btn" id="selectBtn">
               <svg
@@ -270,7 +270,7 @@
                     class="btn btn-outline"
                     style="display: none"
                   >
-                    Seleccionar Todas
+                    Seleccionar Grupo
                   </button>
                   <button
                     type="button"
@@ -278,7 +278,7 @@
                     class="btn btn-outline"
                     style="display: none"
                   >
-                    Limpiar Selección
+                    Limpiar Selección de Grupo
                   </button>
                 </div>
               </div>
@@ -308,22 +308,6 @@
           <h3>Vista Previa de Páginas</h3>
           <div class="preview-info">
             <span id="selectedPagesInfo">0 páginas seleccionadas</span>
-            <div class="preview-controls">
-              <button
-                type="button"
-                id="selectAllGroupBtn"
-                class="btn btn-small"
-              >
-                Seleccionar Grupo
-              </button>
-              <button
-                type="button"
-                id="deselectAllBtn"
-                class="btn btn-small btn-outline"
-              >
-                Deseleccionar Todo
-              </button>
-            </div>
           </div>
         </div>
 
@@ -359,32 +343,6 @@
 
         <!-- Page Grid -->
         <div class="page-grid" id="pageGrid"></div>
-
-        <!-- Extract Selected Button -->
-        <div
-          class="extract-selected"
-          id="extractSelected"
-          style="display: none"
-        >
-          <button
-            type="button"
-            id="extractSelectedBtn"
-            class="btn btn-success btn-large"
-          >
-            <svg
-              class="btn-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-              <polyline points="7,10 12,15 17,10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Extraer <span id="selectedCount">0</span> Páginas Seleccionadas
-          </button>
-        </div>
       </div>
 
       <!-- Instructions -->
