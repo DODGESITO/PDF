@@ -217,6 +217,10 @@ h1 {
 .unlock-btn .button-icon {
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
 }
+.image-btn .button-icon {
+  background: linear-gradient(135deg, #f87171, #ef4444);
+}
+
 
 .button-content h3 {
   font-size: 1.5rem;

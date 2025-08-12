@@ -1,0 +1,376 @@
+{% extends 'layout/nav.html' %} {% load static %} {% block cont %}
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Convertir Imágenes a PDF</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/imagen_a_pdf.css' %}" />
+  </head>
+  <body>
+    <!-- Background Effects -->
+    <div class="background-effects">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+    </div>
+
+    <div class="container">
+      <!-- Header Section -->
+      <div class="header-section">
+        <div class="tool-icon">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21,15 16,10 5,21" />
+          </svg>
+        </div>
+        <h1>Convertir Imágenes a PDF</h1>
+        <p class="subtitle">
+          Convierte múltiples imágenes en un documento PDF personalizado
+        </p>
+      </div>
+
+      <!-- Main Card -->
+      <div class="main-card">
+        <form method="post" enctype="multipart/form-data" class="convert-form">
+          {% csrf_token %}
+
+          <!-- Upload Area -->
+          <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21,15 16,10 5,21" />
+              </svg>
+            </div>
+            <h3>Selecciona imágenes</h3>
+            <p>Haz clic para elegir o arrastra múltiples imágenes aquí</p>
+            <input
+              type="file"
+              id="image_files"
+              name="image_files"
+              accept="image/*"
+              multiple
+              required
+              hidden
+            />
+            <button type="button" class="select-btn" id="selectBtn">
+              <svg
+                class="btn-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17,8 12,3 7,8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              Seleccionar Imágenes
+            </button>
+          </div>
+
+          <!-- Images Preview and Reorder -->
+          <div
+            class="images-container"
+            id="imagesContainer"
+            style="display: none"
+          >
+            <div class="section-header">
+              <h4>Imágenes seleccionadas</h4>
+              <p>Arrastra para reordenar</p>
+            </div>
+
+            <!-- Added navigation controls for single image preview -->
+            <div
+              class="navigation-container"
+              id="navContainer"
+              style="display: none"
+            >
+              <button type="button" id="prevBtn" class="nav-btn">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="15,18 9,12 15,6" />
+                </svg>
+              </button>
+              <span id="pageNumber" class="page-number">1 / 1</span>
+              <button type="button" id="nextBtn" class="nav-btn">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="9,18 15,12 9,6" />
+                </svg>
+              </button>
+              <button type="button" id="moveUpBtn" class="reorder-btn">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="18,15 12,9 6,15" />
+                </svg>
+              </button>
+              <button type="button" id="moveDownBtn" class="reorder-btn">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="6,9 12,15 18,9" />
+                </svg>
+              </button>
+
+              <button
+                type="button"
+                id="removeCurrentBtn"
+                class="nav-btn remove-btn"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <div class="images-list" id="imagesList"></div>
+          </div>
+
+          <!-- PDF Configuration -->
+          <div class="pdf-config" id="pdfConfig" style="display: none">
+            <div class="section-header">
+              <h4>Configuración del PDF</h4>
+            </div>
+
+            <div class="config-grid">
+              <!-- Tamaño de página -->
+              <div class="config-group">
+                <label for="page_size">Tamaño de página</label>
+                <select id="page_size" name="page_size" class="config-select">
+                  <option value="A4">A4 (210 × 297 mm)</option>
+                  <option value="Letter">Carta (216 × 279 mm)</option>
+                  <option value="Legal">Oficio (216 × 356 mm)</option>
+                  <option value="fit">Ajustado a imagen</option>
+                </select>
+              </div>
+
+              <!-- Orientación -->
+              <div class="config-group">
+                <label for="orientation">Orientación</label>
+                <select
+                  id="orientation"
+                  name="orientation"
+                  class="config-select"
+                >
+                  <option value="portrait">Vertical</option>
+                  <option value="landscape">Horizontal</option>
+                </select>
+              </div>
+
+              <!-- Márgenes -->
+              <div class="config-group">
+                <label for="margins">Márgenes</label>
+                <select id="margins" name="margins" class="config-select">
+                  <option value="none">Sin margen</option>
+                  <option value="small">Margen pequeño (10mm)</option>
+                  <option value="medium" selected>Margen medio (20mm)</option>
+                  <option value="large">Margen grande (30mm)</option>
+                  <option value="custom">Personalizado</option>
+                </select>
+              </div>
+
+              <!-- Ajuste de imagen -->
+              <div class="config-group">
+                <label for="image_fit">Ajuste de imagen</label>
+                <select id="image_fit" name="image_fit" class="config-select">
+                  <option value="fit" selected>
+                    Escalar manteniendo proporción
+                  </option>
+                  <option value="fill">Escalar para llenar página</option>
+                  <option value="center">
+                    Centrar imagen (tamaño original)
+                  </option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Márgenes personalizados -->
+            <div
+              class="custom-margins"
+              id="customMargins"
+              style="display: none"
+            >
+              <div class="margins-grid">
+                <div class="margin-input">
+                  <label for="margin_top">Superior (mm)</label>
+                  <input
+                    type="number"
+                    id="margin_top"
+                    name="margin_top"
+                    value="20"
+                    min="0"
+                    max="50"
+                  />
+                </div>
+                <div class="margin-input">
+                  <label for="margin_right">Derecho (mm)</label>
+                  <input
+                    type="number"
+                    id="margin_right"
+                    name="margin_right"
+                    value="20"
+                    min="0"
+                    max="50"
+                  />
+                </div>
+                <div class="margin-input">
+                  <label for="margin_bottom">Inferior (mm)</label>
+                  <input
+                    type="number"
+                    id="margin_bottom"
+                    name="margin_bottom"
+                    value="20"
+                    min="0"
+                    max="50"
+                  />
+                </div>
+                <div class="margin-input">
+                  <label for="margin_left">Izquierdo (mm)</label>
+                  <input
+                    type="number"
+                    id="margin_left"
+                    name="margin_left"
+                    value="20"
+                    min="0"
+                    max="50"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Convert Button -->
+          <div
+            class="convert-options"
+            id="convertOptions"
+            style="display: none"
+          >
+            <button type="submit" class="btn btn-success">
+              <svg
+                class="btn-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                />
+                <polyline points="14,2 14,8 20,8" />
+              </svg>
+              Convertir a PDF
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Messages del servidor (Django) -->
+      {% if message %}
+      <div class="message-container">
+        <div class="message {{ status }}">
+          <div class="message-icon">
+            {% if status == 'success' %}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="20,6 9,17 4,12" />
+            </svg>
+            {% elif status == 'error' %}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="15" y1="9" x2="9" y2="15" />
+              <line x1="9" y1="9" x2="15" y2="15" />
+            </svg>
+            {% else %}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            {% endif %}
+          </div>
+          <span>{{ message }}</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Instructions -->
+      <div class="instructions-card">
+        <h4>Instrucciones:</h4>
+        <ul>
+          <li>Selecciona múltiples imágenes (JPG, PNG, GIF, BMP, TIFF)</li>
+          <li>Usa los botones de navegación para ver cada imagen</li>
+          <li>Usa los botones "Mover arriba/abajo" para reordenar</li>
+          <li>Configura el tamaño, orientación y márgenes del PDF</li>
+          <li>Los márgenes se muestran en la vista previa</li>
+          <li>El PDF se generará con una imagen por página</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Messages dinámicos (JavaScript) -->
+    <div id="messages" class="messages"></div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading" style="display: none">
+      <div class="spinner"></div>
+      <p>Convirtiendo imágenes a PDF...</p>
+    </div>
+
+    <!-- Importar JavaScript -->
+    <script src="{% static 'script/imagen_a_pdf.js' %}"></script>
+  </body>
+</html>
+{% endblock %}

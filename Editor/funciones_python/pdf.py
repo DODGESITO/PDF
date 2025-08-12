@@ -1,10 +1,14 @@
 import os
 from PyPDF2 import PdfMerger, PdfReader, PdfWriter
 from PyPDF2.errors import PdfReadError
+from PIL import Image
 import zipfile
 import fitz
 import shutil
 import traceback
+from reportlab.lib.pagesizes import letter, A4, legal
+from reportlab.lib.units import inch, cm
+from reportlab.pdfgen import canvas
 
 def join_pdfs(pdf_file_paths: list, output_directory: str):
   """Une múltiples archivos PDF en uno solo."""
@@ -500,3 +504,96 @@ def verificar_pdf_protegido(input_pdf_path: str) -> dict:
         result['error'] = f"Error inesperado: {str(e)}"
         return result
 
+def get_page_size(size_str):
+    """Retorna el tamaño de página de ReportLab a partir de un string."""
+    sizes = {
+        'letter': letter,
+        'a4': A4,
+        'legal': legal,
+    }
+    return sizes.get(size_str.lower(), A4)
+
+def get_margins(margins_str):
+    """Retorna los márgenes en puntos a partir de un string o valor personalizado."""
+    margin_values = {
+        'none': 0,
+        'small': 0.25 * inch,
+        'standard': 0.5 * inch,
+        'large': 1 * inch,
+    }
+    return margin_values.get(margins_str.lower(), 0.5 * inch)
+
+def convert_images_to_pdf_with_options(image_paths: list, output_path: str, page_size: str, orientation: str, margins: str, fit_mode: str):
+    """
+    Convierte una lista de rutas de imágenes a un único archivo PDF con opciones de configuración.
+    Args:
+        image_paths (list): Lista de rutas a los archivos de imagen.
+        output_path (str): Ruta donde se guardará el PDF de salida.
+        page_size (str): Tamaño de la página ('A4', 'Letter', 'Legal').
+        orientation (str): Orientación de la página ('portrait' o 'landscape').
+        margins (str): Márgenes ('none', 'small', 'standard', 'large').
+        fit_mode (str): Modo de ajuste de la imagen ('fit' o 'fill').
+    """
+    images = []
+    
+    try:
+        page_width, page_height = get_page_size(page_size)
+        
+        if orientation == 'landscape':
+            page_width, page_height = page_height, page_width
+
+        margin_value = get_margins(margins)
+
+        c = canvas.Canvas(output_path, pagesize=(page_width, page_height))
+        
+        for image_path in image_paths:
+            try:
+                img = Image.open(image_path)
+                
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                
+                # Calcular dimensiones de la imagen con los márgenes
+                drawable_width = page_width - 2 * margin_value
+                drawable_height = page_height - 2 * margin_value
+                
+                img_width, img_height = img.size
+                
+                # Calcular proporciones
+                aspect_ratio = img_width / img_height
+                
+                if fit_mode == 'fit':
+                    # Ajustar la imagen para que quepa completamente
+                    if (drawable_width / drawable_height) > aspect_ratio:
+                        draw_height = drawable_height
+                        draw_width = draw_height * aspect_ratio
+                    else:
+                        draw_width = drawable_width
+                        draw_height = draw_width / aspect_ratio
+                else: # fit_mode == 'fill'
+                    # Llenar el espacio disponible, recortando si es necesario
+                    if (drawable_width / drawable_height) < aspect_ratio:
+                        draw_height = drawable_height
+                        draw_width = draw_height * aspect_ratio
+                    else:
+                        draw_width = drawable_width
+                        draw_height = draw_width / aspect_ratio
+
+                # Calcular la posición para centrar la imagen
+                x = (page_width - draw_width) / 2
+                y = (page_height - draw_height) / 2
+                
+                c.drawImage(image_path, x, y, width=draw_width, height=draw_height)
+                c.showPage()
+                
+            except Exception as e:
+                print(f"Error processing image {image_path}: {e}")
+            finally:
+                if 'img' in locals() and img:
+                    img.close()
+        
+        c.save()
+        return output_path
+    
+    except Exception as e:
+        raise Exception(f"Error al convertir imágenes a PDF: {str(e)}")

@@ -9,4 +9,5 @@ urlpatterns = [
     path('rotar/', views.rotate_pdf, name='rotate_pdf'),
     path('desbloquear/', views.unlock_pdf_view, name='unlock_pdf'),
     path('check-pdf-status/', views.check_pdf_status, name='check_pdf_status'),
+    path('imagen/', views.convert_images_to_pdf_view, name='convert_image_to_pdf'),
 ]
