@@ -557,22 +557,11 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   padding: 1rem;
-  cursor: grab;
   transition: all 0.3s ease;
   min-height: 140px;
   justify-content: center;
 }
 
-.image-item:hover {
-  background: rgba(255, 255, 255, 0.15);
-  transform: translateX(5px);
-}
-
-.image-item.dragging {
-  opacity: 0.5;
-  transform: rotate(5deg);
-  cursor: grabbing;
-}
 
 .drag-handle {
   width: 24px;
@@ -607,11 +596,6 @@ body {
   align-items: center;
   justify-content: center;
   background: #ffffff;
-}
-
-.canvas-container:hover {
-  border-color: #10b981;
-  transform: scale(1.02);
 }
 
 .canvas-container canvas {
