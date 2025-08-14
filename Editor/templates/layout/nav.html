@@ -1,58 +1,77 @@
 {% load static %}
-<link rel="icon" href="{% static 'image/icon.ico' %}" type="image/x-icon">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="{% static 'css/nav.css' %}">
-
-<nav class="navbar">
-    <div class="nav-container">
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Convertir múltiples imágenes en un PDF personalizado"
+    />
+    <link rel="icon" href="{% static 'image/icon.ico' %}" type="image/x-icon" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/nav.css' %}" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-container">
         <!-- Logo -->
         <a href="{% url 'home' %}" class="nav-brand">
-            <img src="{% static 'image/icon.png' %}" alt="Logo" class="logo">
-            <span class="brand-text">PDF Editor</span>
+          <img src="{% static 'image/icon.png' %}" alt="Logo" class="logo" />
+          <span class="brand-text">PDF Editor</span>
         </a>
 
         <!-- Navigation Links -->
         <div class="nav-links">
-            <a href="{% url 'join_pdf' %}" class="nav-link">Unir PDFs</a>
-            <a href="{% url 'split_pdf' %}" class="nav-link">Dividir PDFs</a>
-            <a href="{% url 'compress_pdf' %}" class="nav-link">Comprimir PDFs</a>
-            <a href="{% url 'rotate_pdf' %}" class="nav-link">Rotar PDFs</a>
-            <a href="{% url 'unlock_pdf' %}" class="nav-link">Descifrar PDFs</a>
-            <a href="{% url 'convert_image_to_pdf' %}" class="nav-link">Imagen a PDF</a>
+          <a href="{% url 'join_pdf' %}" class="nav-link">Unir PDFs</a>
+          <a href="{% url 'split_pdf' %}" class="nav-link">Dividir PDFs</a>
+          <a href="{% url 'compress_pdf' %}" class="nav-link">Comprimir PDFs</a>
+          <a href="{% url 'rotate_pdf' %}" class="nav-link">Rotar PDFs</a>
+          <a href="{% url 'unlock_pdf' %}" class="nav-link">Descifrar PDFs</a>
+          <a href="{% url 'convert_image_to_pdf' %}" class="nav-link"
+            >Imagen a PDF</a
+          >
         </div>
 
         <!-- Mobile Menu Button -->
-        <button class="mobile-menu-btn" id="mobileMenuBtn">
-            <span></span>
-            <span></span>
-            <span></span>
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menu">
+          <span></span>
+          <span></span>
+          <span></span>
         </button>
-    </div>
+      </div>
 
-    <!-- Mobile Menu -->
-    <div class="mobile-menu" id="mobileMenu">
+      <!-- Mobile Menu -->
+      <div class="mobile-menu" id="mobileMenu">
         <a href="{% url 'join_pdf' %}" class="mobile-link">Unir PDFs</a>
         <a href="{% url 'split_pdf' %}" class="mobile-link">Dividir PDFs</a>
-        <a href="{% url 'compress_pdf' %}" class="mobile-link">Comprimir PDFs</a>
+        <a href="{% url 'compress_pdf' %}" class="mobile-link"
+          >Comprimir PDFs</a
+        >
         <a href="{% url 'rotate_pdf' %}" class="mobile-link">Rotar PDFs</a>
         <a href="{% url 'unlock_pdf' %}" class="mobile-link">Descifrar PDFs</a>
-        <a href="{% url 'convert_image_to_pdf' %}" class="mobile-link">Imagen a PDF</a>
-    </div>
-</nav>
+        <a href="{% url 'convert_image_to_pdf' %}" class="mobile-link"
+          >Imagen a PDF</a
+        >
+      </div>
+    </nav>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
-    
-    mobileMenuBtn.addEventListener('click', function() {
-        mobileMenuBtn.classList.toggle('active');
-        mobileMenu.classList.toggle('active');
-    });
-});
-</script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const mobileMenuBtn = document.getElementById("mobileMenuBtn");
+        const mobileMenu = document.getElementById("mobileMenu");
 
-{% block cont %}
-{% endblock %}
+        mobileMenuBtn.addEventListener("click", function () {
+          mobileMenuBtn.classList.toggle("active");
+          mobileMenu.classList.toggle("active");
+        });
+      });
+    </script>
+
+    {% block cont %} {% endblock %}
+  </body>
+</html>

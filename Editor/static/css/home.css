@@ -222,7 +222,7 @@ h1 {
 }
 
 
-.button-content h3 {
+.button-content h2 {
   font-size: 1.5rem;
   font-weight: 600;
   color: #ffffff;
@@ -237,7 +237,7 @@ h1 {
   transition: color 0.3s ease;
 }
 
-.tool-button:hover .button-content h3 {
+.tool-button:hover .button-content h2 {
   color: #a855f7;
 }
 
@@ -325,7 +325,7 @@ h1 {
   width: 100%;
 }
 
-.feature h4 {
+.feature h3 {
   font-size: 1.25rem;
   font-weight: 600;
   color: #ffffff;

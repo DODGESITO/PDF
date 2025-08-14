@@ -166,7 +166,7 @@ body {
   height: 100%;
 }
 
-.drop-zone h3 {
+.drop-zone h2 {
   font-size: 1.125rem;
   font-weight: 600;
   color: white;
@@ -183,7 +183,7 @@ body {
   margin-bottom: 1.5rem;
 }
 
-.file-list h4 {
+.file-list h3 {
   color: white;
   margin-bottom: 1rem;
   font-size: 1rem;

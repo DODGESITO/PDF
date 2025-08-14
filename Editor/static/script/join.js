@@ -41,53 +41,71 @@ class PDFMerger {
     this.dropZone.addEventListener("dragover", (e) => this.handleDragOver(e));
     this.dropZone.addEventListener("dragleave", (e) => this.handleDragLeave(e));
     this.dropZone.addEventListener("drop", (e) => this.handleDrop(e));
-    
+
     // Click en drop zone → input
     this.dropZone.addEventListener("click", () => this.fileInput.click());
-    
+
     // Selección de archivos
     this.fileInput.addEventListener("change", (e) => this.handleFileSelect(e));
-    
+
     // Envío de formulario
     this.uploadForm.addEventListener("submit", (e) => this.handleFormSubmit(e));
   }
 
-  async handleFileSelect(e) {
-    const newFiles = Array.from(e.target.files);
-    if (!newFiles.length) return;
+async handleFileSelect(e) {
+  const newFiles = Array.from(e.target.files);
+  if (!newFiles.length) return;
 
-    const maxFiles = 10;
-    const totalFilesAfterAdd = this.selectedFiles.length + newFiles.length;
-    
-    if (totalFilesAfterAdd > maxFiles) {
-      this.showMessage(`Solo puedes subir un máximo de ${maxFiles} archivos PDF.`, "error");
-      e.target.value = "";
-      return;
-    }
+  const maxFiles = 10;
+  const totalFilesAfterAdd = this.selectedFiles.length + newFiles.length;
 
-    const pdfFiles = newFiles.filter((f) => f.type === "application/pdf");
-    if (pdfFiles.length !== newFiles.length) {
+  // Validar límite de cantidad
+  if (totalFilesAfterAdd > maxFiles) {
+    this.showMessage(
+      `Solo puedes subir un máximo de ${maxFiles} archivos PDF.`,
+      "error"
+    );
+    e.target.value = "";
+    return;
+  }
+
+  const maxSize = 50 * 1024 * 1024; // 50MB
+  const validFiles = [];
+
+  for (let file of newFiles) {
+    if (file.type !== "application/pdf") {
       this.showMessage(
-        "Algunos archivos no son PDFs válidos y fueron omitidos",
+        `El archivo "${file.name}" no es un PDF válido y fue omitido`,
         "warning"
       );
+      continue;
     }
 
-    const validFiles = [];
-    for (let file of pdfFiles) {
-      const valid = await this.validatePdf(file);
-      if (valid) {
-        validFiles.push(file);
-      } else {
-        this.showMessage(`El archivo ${file.name} está corrupto`, "error");
-      }
+    if (file.size > maxSize) {
+      this.showMessage(
+        `El archivo "${file.name}" es demasiado grande. Máximo 50MB permitido`,
+        "error"
+      );
+      continue;
     }
 
-    if (validFiles.length) {
-      this.selectedFiles.push(...validFiles);
-      this.addFiles(validFiles);
+    const isValidPdf = await this.validatePdf(file);
+    if (!isValidPdf) {
+      this.showMessage(`El archivo "${file.name}" está corrupto o protegido`, "error");
+      continue;
     }
+
+    validFiles.push(file);
   }
+
+  if (validFiles.length) {
+    this.selectedFiles.push(...validFiles);
+    this.addFiles(validFiles);
+  }
+
+  e.target.value = "";
+}
+
 
   async validatePdf(file) {
     try {
@@ -173,8 +191,12 @@ class PDFMerger {
     `;
 
     // Agregar event listeners para drag and drop
-    fileItem.addEventListener("dragstart", (e) => this.handleFileDragStart(e, index));
-    fileItem.addEventListener("dragover", (e) => this.handleFileDragOver(e, index));
+    fileItem.addEventListener("dragstart", (e) =>
+      this.handleFileDragStart(e, index)
+    );
+    fileItem.addEventListener("dragover", (e) =>
+      this.handleFileDragOver(e, index)
+    );
     fileItem.addEventListener("drop", (e) => this.handleFileDrop(e, index));
     fileItem.addEventListener("dragend", (e) => this.handleFileDragEnd(e));
 
@@ -191,13 +213,13 @@ class PDFMerger {
   handleFileDragOver(e, index) {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
-    
+
     if (this.draggedIndex !== null && this.draggedIndex !== index) {
       // Reordenar archivos
       const draggedFile = this.currentFiles[this.draggedIndex];
       this.currentFiles.splice(this.draggedIndex, 1);
       this.currentFiles.splice(index, 0, draggedFile);
-      
+
       this.draggedIndex = index;
       this.updateDisplay();
       this.updateFileInput();
@@ -246,7 +268,8 @@ class PDFMerger {
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = "high";
 
-      await page.render({ canvasContext: ctx, viewport: scaledViewport }).promise;
+      await page.render({ canvasContext: ctx, viewport: scaledViewport })
+        .promise;
 
       loading.style.display = "none";
       canvas.style.display = "block";
@@ -265,14 +288,12 @@ class PDFMerger {
     this.showMessage(`Archivo "${fileName}" eliminado`, "success");
   }
 
-clearFiles() {
+  clearFiles() {
     this.currentFiles = [];
-    this.selectedFiles = []; 
+    this.selectedFiles = [];
     this.fileInput.value = "";
     this.updateDisplay();
-    this.showMessage("Todos los archivos han sido eliminados", "success");
-}
-
+  }
 
   handleDragOver(e) {
     e.preventDefault();
@@ -287,11 +308,11 @@ clearFiles() {
   handleDrop(e) {
     e.preventDefault();
     this.dropZone.classList.remove("drag-over");
-    
+
     const droppedFiles = Array.from(e.dataTransfer.files).filter(
       (file) => file.type === "application/pdf"
     );
-    
+
     if (droppedFiles.length) {
       this.handleFileSelect({ target: { files: droppedFiles } });
     } else {

@@ -4,6 +4,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Convertir múltiples imágenes en un PDF personalizado"
+    />
     <title>Convertir Imágenes a PDF</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -60,7 +64,7 @@
                 <polyline points="21,15 16,10 5,21" />
               </svg>
             </div>
-            <h3>Selecciona imágenes</h3>
+            <h2>Selecciona imágenes</h2>
             <p>Haz clic para elegir o arrastra múltiples imágenes aquí</p>
             <input
               type="file"
@@ -94,8 +98,8 @@
             style="display: none"
           >
             <div class="section-header">
-              <h4>Imágenes seleccionadas</h4>
-              <p>Arrastra para reordenar</p>
+              <h3>Imágenes seleccionadas</h3>
+              <p>presiona los botones azules para reordenar</p>
             </div>
 
             <!-- Added navigation controls for single image preview -->
@@ -168,7 +172,7 @@
           <!-- PDF Configuration -->
           <div class="pdf-config" id="pdfConfig" style="display: none">
             <div class="section-header">
-              <h4>Configuración del PDF</h4>
+              <h3>Configuración del PDF</h3>
             </div>
 
             <div class="config-grid">
@@ -179,7 +183,6 @@
                   <option value="A4">A4 (210 × 297 mm)</option>
                   <option value="Letter">Carta (216 × 279 mm)</option>
                   <option value="Legal">Oficio (216 × 356 mm)</option>
-                  <option value="fit">Ajustado a imagen</option>
                 </select>
               </div>
 
@@ -204,21 +207,6 @@
                   <option value="small">Margen pequeño (10mm)</option>
                   <option value="medium" selected>Margen medio (20mm)</option>
                   <option value="large">Margen grande (30mm)</option>
-                  <option value="custom">Personalizado</option>
-                </select>
-              </div>
-
-              <!-- Ajuste de imagen -->
-              <div class="config-group">
-                <label for="image_fit">Ajuste de imagen</label>
-                <select id="image_fit" name="image_fit" class="config-select">
-                  <option value="fit" selected>
-                    Escalar manteniendo proporción
-                  </option>
-                  <option value="fill">Escalar para llenar página</option>
-                  <option value="center">
-                    Centrar imagen (tamaño original)
-                  </option>
                 </select>
               </div>
             </div>
@@ -348,7 +336,7 @@
 
       <!-- Instructions -->
       <div class="instructions-card">
-        <h4>Instrucciones:</h4>
+        <h3>Instrucciones:</h3>
         <ul>
           <li>Selecciona múltiples imágenes (JPG, PNG, GIF, BMP, TIFF)</li>
           <li>Usa los botones de navegación para ver cada imagen</li>

@@ -173,7 +173,7 @@ body {
   height: 100%;
 }
 
-.upload-area h3 {
+.upload-area h2 {
   font-size: 1rem;
   font-weight: 600;
   color: white;
@@ -487,7 +487,7 @@ body {
   backdrop-filter: blur(10px);
 }
 
-.instructions-card h4 {
+.instructions-card h3 {
   color: white;
   margin-bottom: 0.75rem;
   font-size: 0.9rem;
@@ -503,7 +503,7 @@ body {
 
 .instructions-card li {
   color: #cbd5e1;
-  font-size: 0.8rem;
+  font-size: 13px;
   position: relative;
   padding-left: 1rem;
 }
@@ -530,7 +530,7 @@ body {
   margin-bottom: 1rem;
 }
 
-.section-header h4 {
+.section-header h3 {
   color: white;
   font-size: 0.9rem;
   font-weight: 600;

@@ -5,25 +5,25 @@ let pdfjsLib = null
 async function loadPDFJS() {
   try {
     if (typeof window.pdfjsLib === "undefined") {
-      const script = document.createElement("script")
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
-      document.head.appendChild(script)
+      const script = document.createElement("script");
+      script.type = "module";
+      script.src = "/static/pdfjs/build/pdf.js";
+      document.head.appendChild(script);
 
       await new Promise((resolve, reject) => {
-        script.onload = resolve
-        script.onerror = reject
-      })
+        script.onload = resolve;
+        script.onerror = reject;
+      });
     }
 
     window.pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
-    pdfjsLib = window.pdfjsLib
-    console.log("✅ PDF.js cargado correctamente")
+      "/static/pdfjs/build/pdf.worker.js"; // O .js
+    pdfjsLib = window.pdfjsLib;
+    console.log("PDF.js cargado localmente");
   } catch (error) {
-    console.warn("⚠️ No se pudo cargar PDF.js:", error)
+    console.warn("No se pudo cargar PDF.js local:", error);
   }
 }
-
 // Clase principal para manejar el desbloqueo de PDFs
 class PDFUnlocker {
   constructor() {
@@ -150,13 +150,23 @@ class PDFUnlocker {
       return
     }
 
+    const maxSize = 50 * 1024 * 1024 // 50MB
+    if (file.size > maxSize) {
+      this.showMessage("El archivo es demasiado grande. Máximo 50MB permitido", "error")
+      return
+    }
+
     this.processFile(file)
   }
 
   // Manejo de selección de archivos
-  async handleFileSelect(e) {
-    const file = e.target.files[0]
-    if (!file) return
+  async handleFileSelect(event) {
+    const file = event.target.files[0]
+
+    if (!file) {
+      this.clearFile()
+      return
+    }
 
     // Validación básica de tipo de archivo
     if (file.type !== "application/pdf") {
@@ -165,14 +175,12 @@ class PDFUnlocker {
       return
     }
 
-    // Validación de tamaño de archivo (opcional)
-    const maxSize = 50 * 1024 * 1024 // 50MB
+    const maxSize = 50 * 1024 * 1024
     if (file.size > maxSize) {
-      this.showMessage("El archivo es demasiado grande. Máximo 50MB permitido.", "error")
-      this.fileInput.value = ""
+      this.showMessage("El archivo es demasiado grande. Máximo 50MB permitido", "error")
+      this.clearFile()
       return
     }
-
     // Verificación básica de archivo corrupto
     try {
       // Intentar leer los primeros bytes para verificar que es un PDF válido
@@ -344,7 +352,7 @@ class PDFUnlocker {
 
       // Si es un error de contraseña, mostrar icono de candado
       loading.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
           <circle cx="12" cy="16" r="1"/>
           <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
@@ -573,7 +581,7 @@ class PDFUnlocker {
     this.pdfThumbnail.style.display = "none"
     this.previewLoading.style.display = "flex"
     this.previewLoading.innerHTML = `
-      <svg class="loading-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg class="loading-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M21 12a9 9 0 11-6.219-8.56"/>
       </svg>
     `
@@ -603,12 +611,12 @@ class PDFUnlocker {
 
     const icons = {
       success:
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20,6 9,17 4,12"/></svg>',
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20,6 9,17 4,12"/></svg>',
       error:
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
       warning:
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
-      info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+      info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>',
     }
 
     messageEl.innerHTML = `

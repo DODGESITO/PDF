@@ -95,6 +95,12 @@ class PDFSplitter {
     this.loadAllPagesBtn = document.getElementById("loadAllPagesBtn");
     this.selectAllPagesBtn = document.getElementById("selectAllPagesBtn");
     this.clearAllPagesBtn = document.getElementById("clearAllPagesBtn");
+
+    // AÑADIDO: Nuevos elementos para el switch
+    this.splitIntoSeparatePdfsCheckbox = document.getElementById('split_into_separate_pdfs_checkbox');
+    this.splitIntoSeparatePdfsHidden = document.getElementById('split_into_separate_pdfs_hidden');
+    this.splitIntoSeparatePdfsCheckbox1 = document.getElementById('split_into_separate_pdfs_checkbox1');
+    this.splitIntoSeparatePdfsHidden1 = document.getElementById('split_into_separate_pdfs_hidden1');
   }
 
   bindEvents() {
@@ -119,9 +125,11 @@ class PDFSplitter {
       this.previewBtn.addEventListener("click", () => this.generatePreview());
     }
     if (this.clearSelectionBtn) {
-      this.clearSelectionBtn.addEventListener("click", () =>
-        this.clearSelection()
-      );
+      this.clearSelectionBtn.addEventListener("click", () => {
+        this.clearSelection();
+        this.splitIntoSeparatePdfsCheckbox.checked = false;
+        this.splitIntoSeparatePdfsHidden.value = 'false';
+      });
     }
     if (this.selectAllGroupBtn) {
       this.selectAllGroupBtn.addEventListener("click", () =>
@@ -140,6 +148,13 @@ class PDFSplitter {
       this.nextGroupBtn.addEventListener("click", () => this.navigateGroup(1));
     }
 
+    // AÑADIDO: Evento para el switch
+    if (this.splitIntoSeparatePdfsCheckbox) {
+      this.splitIntoSeparatePdfsCheckbox.addEventListener('change', () => this.toggleSeparatePdfSwitch());
+    }
+    if (this.splitIntoSeparatePdfsCheckbox1) {
+      this.splitIntoSeparatePdfsCheckbox1.addEventListener('change', () => this.toggleSeparatePdfSwitch1());
+    }
 
     // Eventos para sub-opciones de extract_pages
     if (this.extractMethod) {
@@ -160,6 +175,14 @@ class PDFSplitter {
         this.clearAllPages()
       );
     }
+  }
+
+  // AÑADIDO: Nuevo método para manejar el estado del switch
+  toggleSeparatePdfSwitch() {
+    this.splitIntoSeparatePdfsHidden.value = this.splitIntoSeparatePdfsCheckbox.checked ? 'true' : 'false';
+  }
+  toggleSeparatePdfSwitch1() {
+    this.splitIntoSeparatePdfsHidden1.value = this.splitIntoSeparatePdfsCheckbox1.checked ? 'true' : 'false';
   }
 
   handleFileDragOver(event) {
@@ -199,6 +222,12 @@ class PDFSplitter {
       this.showMessage("Por favor selecciona un archivo PDF válido", "error");
       this.clearFile();
       return;
+    }
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+        this.showMessage("El archivo es demasiado grande. Máximo 50MB permitido", "error");
+        this.clearFile();
+        return;
     }
 
     this.showLoading(true, "Cargando PDF...");
@@ -866,6 +895,9 @@ showVisualSelectionSection() {
     const formData = new FormData();
     formData.append("pdf_file", this.pdfFile);
     formData.append("split_method", this.splitMethod.value);
+    formData.append('split_into_separate_pdfs', this.splitIntoSeparatePdfsCheckbox.checked);
+    formData.append('split_into_separate_pdfs', this.splitIntoSeparatePdfsCheckbox1.checked);
+
 
     if (this.splitMethod.value === "pages_per_file") {
       formData.append(
@@ -974,6 +1006,14 @@ showVisualSelectionSection() {
     if (this.previewSection) {
       this.previewSection.style.display = "none";
     }
+
+    // AÑADIDO: Reinicia el switch a su estado por defecto
+    if (this.splitIntoSeparatePdfsCheckbox) {
+      this.splitIntoSeparatePdfsCheckbox.checked = false;
+    }
+    if (this.splitIntoSeparatePdfsHidden) {
+      this.splitIntoSeparatePdfsHidden.value = 'false';
+    }
   }
 
   formatFileSize(bytes) {
@@ -1040,17 +1080,10 @@ showVisualSelectionSection() {
         this.specificationGroup.style.display = "none";
       if (this.visualSelectionGroup)
         this.visualSelectionGroup.style.display = "block";
-      if (this.previewSection) {
-        this.previewSection.style.display = "none";
-      }
     }
   }
 }
 
-// Inicializar cuando el DOM esté listo
-if (!window._pdfSplitterInitialized) {
-  window._pdfSplitterInitialized = true;
-  document.addEventListener("DOMContentLoaded", () => {
-    new PDFSplitter();
-  });
-}
+document.addEventListener("DOMContentLoaded", () => {
+  new PDFSplitter();
+});

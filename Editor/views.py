@@ -63,24 +63,24 @@ def split_pdf(request):
         output_directory = os.path.join(settings.MEDIA_ROOT, 'pdf_temp_processed')
         os.makedirs(output_directory, exist_ok=True)
 
-        files_to_delete_after_response = [] 
+        files_to_delete_after_response = []
 
         try:
             original_file_name_base_clean = pdf_processor.clean_filename(uploaded_file.name)
             temp_input_pdf_filename_with_hash = fs.save(uploaded_file.name, uploaded_file)
             temp_input_pdf_path = fs.path(temp_input_pdf_filename_with_hash)
-            files_to_delete_after_response.append(temp_input_pdf_path) 
+            files_to_delete_after_response.append(temp_input_pdf_path)
 
-            output_file_path_for_response = None 
-            filename_for_download = None 
-            content_type_for_download = None 
+            output_file_path_for_response = None
+            filename_for_download = None
+            content_type_for_download = None
 
             if split_method == 'pages_per_file':
                 pages_per_file_str = request.POST.get('pages_per_file')
-                
+
                 if not pages_per_file_str:
                     return JsonResponse({"status": "error", "message": "El número de páginas por archivo es requerido para este método."}, status=400)
-                
+
                 try:
                     pages_per_file = int(pages_per_file_str)
                     if pages_per_file <= 0:
@@ -103,11 +103,11 @@ def split_pdf(request):
 
                 if not start_page_str or not end_page_str:
                     return JsonResponse({"status": "error", "message": "Página inicial y final son requeridas para la división por rango."}, status=400)
-                
+
                 try:
                     start_page = int(start_page_str)
                     end_page = int(end_page_str)
-                    
+
                     if start_page <= 0 or end_page <= 0:
                         return JsonResponse({"status": "error", "message": "Los números de página deben ser enteros positivos."}, status=400)
                     if start_page > end_page:
@@ -127,42 +127,56 @@ def split_pdf(request):
 
             elif split_method == 'extract_pages':
                 pages_specification = request.POST.get('pages_specification')
-                
+                split_into_separate_pdfs = request.POST.get('split_into_separate_pdfs') == 'true'
+
                 if not pages_specification:
                     return JsonResponse({"status": "error", "message": "La especificación de páginas es requerida para este método."}, status=400)
-                
+
                 if not pages_specification.strip():
                     return JsonResponse({"status": "error", "message": "La especificación de páginas no puede estar vacía."}, status=400)
-                
+
                 try:
-                    output_file_path_for_response = pdf_processor.extract_specific_pages(
-                        temp_input_pdf_path,
-                        output_directory,
-                        pages_specification,
-                        original_file_name_base_clean
-                    )
-                    
-                    pages_clean = pages_specification.replace(" ", "").replace(",", "_")
-                    filename_for_download = f"{original_file_name_base_clean}_paginas_{pages_clean}.pdf"
-                    content_type_for_download = 'application/pdf'
-                    
+                    if split_into_separate_pdfs:
+                        
+                        output_file_path_for_response = pdf_processor.extract_specific_pages_to_zip(
+                            temp_input_pdf_path,
+                            output_directory,
+                            pages_specification,
+                            original_file_name_base_clean
+                        )
+                        filename_for_download = os.path.basename(output_file_path_for_response)
+                        content_type_for_download = 'application/zip'
+                    else:
+              
+                        output_file_path_for_response = pdf_processor.extract_specific_pages(
+                            temp_input_pdf_path,
+                            output_directory,
+                            pages_specification,
+                            original_file_name_base_clean
+                        )
+
+                        pages_clean = pages_specification.replace(" ", "").replace(",", "_")
+                        filename_for_download = f"{original_file_name_base_clean}_paginas_{pages_clean}.pdf"
+                        content_type_for_download = 'application/pdf'
+
                 except ValueError as e:
                     return JsonResponse({"status": "error", "message": f"Error en la especificación de páginas: {str(e)}"}, status=400)
                 except Exception as e:
                     return JsonResponse({"status": "error", "message": f"Error al extraer páginas específicas: {str(e)}"}, status=500)
+
             else:
                 return JsonResponse({"status": "error", "message": "Método de división inválido seleccionado."}, status=400)
 
             if output_file_path_for_response:
                 files_to_delete_after_response.append(output_file_path_for_response)
-                
+
                 response = FileResponse(
                     open(output_file_path_for_response, 'rb'),
                     content_type=content_type_for_download,
                     filename=filename_for_download,
                     as_attachment=True
                 )
-                
+
                 def cleanup_files():
                     time.sleep(2)  # Wait for response to be sent
                     for f in files_to_delete_after_response:
@@ -172,7 +186,7 @@ def split_pdf(request):
                                 print(f"Eliminado: {f}")
                             except OSError as e:
                                 print(f"Error eliminando {f}: {e}")
-                    
+
                     # Clean up directory if empty
                     if os.path.exists(output_directory) and not os.listdir(output_directory):
                         try:
@@ -180,12 +194,12 @@ def split_pdf(request):
                             print(f"Directorio eliminado: {output_directory}")
                         except OSError as e:
                             print(f"Error eliminando directorio {output_directory}: {e}")
-                
+
                 # Start cleanup in background thread
                 cleanup_thread = threading.Thread(target=cleanup_files)
                 cleanup_thread.daemon = True
                 cleanup_thread.start()
-                
+
                 return response
             else:
                 return JsonResponse({"status": "error", "message": "No se generó un archivo de salida final."}, status=500)
@@ -207,7 +221,7 @@ def split_pdf(request):
                 except OSError as ose:
                     print(f"ADVERTENCIA: No se pudo eliminar el directorio temporal {output_directory} durante el manejo de errores: {ose}")
             return JsonResponse({"status": "error", "message": f"Ocurrió un error inesperado durante el procesamiento del PDF: {e}"}, status=500)
-    
+
     return render(request, 'split.html')
 
 def compress_pdf_view(request):
@@ -430,7 +444,6 @@ def unlock_pdf_view(request):
             return JsonResponse({"status": "error", "message": f"Error inesperado: {str(e)}"}, status=500)
             
         finally:
-            # Limpiar archivos temporales
             if input_pdf_path and os.path.exists(input_pdf_path):
                 try:
                     os.remove(input_pdf_path)
@@ -529,7 +542,7 @@ def convert_images_to_pdf_view(request):
             page_size = request.POST.get('page_size', 'A4')
             orientation = request.POST.get('orientation', 'portrait')
             margins = request.POST.get('margins', 'standard')
-            fit_mode = request.POST.get('image_fit', 'fit') # Corregir el nombre del campo
+            fit_mode = request.POST.get('image_fit', 'fit') 
 
             # Llamar a la función de conversión con los parámetros del formulario
             output_pdf_path = pdf_processor.convert_images_to_pdf_with_options(
@@ -555,18 +568,27 @@ def convert_images_to_pdf_view(request):
             # Captura y reporta errores más detallados
             return JsonResponse({"status": "error", "message": f"Ocurrió un error inesperado durante la conversión: {str(e)}"}, status=500)
         finally:
-            # Limpiar archivos temporales en todos los casos
+            # Borrar todas las imágenes originales subidas
             for path in temp_image_paths:
                 try:
                     if os.path.exists(path):
                         os.remove(path)
                 except Exception:
                     pass
-            
+
+            # Buscar y borrar imágenes temporales (_temp)
+            for file in os.listdir(settings.MEDIA_ROOT):
+                if "_temp" in file:
+                    try:
+                        os.remove(os.path.join(settings.MEDIA_ROOT, file))
+                    except Exception:
+                        pass
+
+            # Borrar el PDF generado
             if output_pdf_path and os.path.exists(output_pdf_path):
                 try:
                     os.remove(output_pdf_path)
                 except Exception:
                     pass
-                    
+                               
     return render(request, 'imagen_a_pdf.html')

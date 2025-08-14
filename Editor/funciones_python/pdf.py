@@ -7,7 +7,7 @@ import fitz
 import shutil
 import traceback
 from reportlab.lib.pagesizes import letter, A4, legal
-from reportlab.lib.units import inch, cm
+from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 
 def join_pdfs(pdf_file_paths: list, output_directory: str):
@@ -282,6 +282,68 @@ def extract_specific_pages(input_pdf_path: str, output_directory: str, pages_spe
     except Exception as e:
         raise Exception(f"Error al extraer páginas específicas: {str(e)}")
 
+def extract_specific_pages_to_zip(input_pdf_path: str, output_directory: str, pages_specification: str, original_filename_base: str):
+    """
+    Extrae páginas específicas de un PDF y crea PDFs SEPARADOS por cada grupo (separado por comas) en un ZIP.
+    
+    Args:
+        input_pdf_path: Ruta del PDF de entrada
+        output_directory: Directorio donde guardar el archivo ZIP resultante
+        pages_specification: Especificación de páginas como "1, 3-5, 8" (cada grupo separado por coma será un PDF)
+        original_filename_base: Nombre base para los archivos de salida
+    
+    Returns:
+        str: Ruta del archivo ZIP generado con todos los PDFs
+    """
+    if not os.path.exists(input_pdf_path):
+        raise FileNotFoundError(f"Archivo PDF de entrada no encontrado en {input_pdf_path}")
+
+    os.makedirs(output_directory, exist_ok=True)
+
+    try:
+        reader = PdfReader(input_pdf_path)
+        total_pages = len(reader.pages)
+        
+        if total_pages == 0:
+            raise ValueError("El PDF no contiene páginas.")
+
+        page_groups = [group.strip() for group in pages_specification.split(',')]
+        
+        if not page_groups:
+            raise ValueError("No se especificaron grupos de páginas válidos.")
+
+        zip_filename = f"{original_filename_base}_paginas_separadas.zip"
+        zip_path = os.path.join(output_directory, zip_filename)
+        
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for i, group in enumerate(page_groups, 1):
+                page_numbers = parse_page_specification(group, total_pages)
+                
+                if not page_numbers:
+                    continue  # Saltar grupos inválidos
+                
+                writer = PdfWriter()
+                
+                # Agregar páginas del grupo actual
+                for page_num in page_numbers:
+                    writer.add_page(reader.pages[page_num - 1])
+                
+                group_str = group.replace(" ", "").replace("-", "_")
+                pdf_filename = f"{original_filename_base}_grupo_{i}_paginas_{group_str}.pdf"
+                
+                temp_pdf_path = os.path.join(output_directory, pdf_filename)
+                with open(temp_pdf_path, "wb") as temp_file:
+                    writer.write(temp_file)
+                
+                # Agregar al ZIP y eliminar archivo temporal
+                zipf.write(temp_pdf_path, pdf_filename)
+                os.remove(temp_pdf_path)
+        
+        return zip_path
+
+    except Exception as e:
+        raise Exception(f"Error al extraer páginas específicas: {str(e)}")
+
 def parse_page_specification(pages_spec: str, total_pages: int) -> list:
     """
     Parsea una especificación de páginas como "1, 3-5, 9" y devuelve una lista de números de página.
@@ -523,19 +585,36 @@ def get_margins(margins_str):
     }
     return margin_values.get(margins_str.lower(), 0.5 * inch)
 
+def calcular_posicion_y_tamano(img_width, img_height, page_width, page_height, margin_value, fit_mode):
+    """
+    Calcula el tamaño y posición de la imagen según el modo de ajuste.
+    fit_mode puede ser: 'original', 'fit'
+    """
+    aspect_ratio = img_width / img_height
+    drawable_width = page_width - 2 * margin_value
+    drawable_height = page_height - 2 * margin_value
+
+    # if fit_mode == 'center':
+    #     draw_width = min(img_width, drawable_width)
+    #     draw_height = min(img_height, drawable_height)
+
+    if fit_mode == 'fit':
+        # Escalar manteniendo proporción
+        if (drawable_width / drawable_height) > aspect_ratio:
+            draw_height = drawable_height
+            draw_width = draw_height * aspect_ratio
+        else:
+            draw_width = drawable_width
+            draw_height = draw_width / aspect_ratio
+    else:
+        raise ValueError("fit_mode debe ser 'original', 'fit'")
+
+    x = (page_width - draw_width) / 2
+    y = (page_height - draw_height) / 2
+
+    return x, y, draw_width, draw_height
+
 def convert_images_to_pdf_with_options(image_paths: list, output_path: str, page_size: str, orientation: str, margins: str, fit_mode: str):
-    """
-    Convierte una lista de rutas de imágenes a un único archivo PDF con opciones de configuración.
-    Args:
-        image_paths (list): Lista de rutas a los archivos de imagen.
-        output_path (str): Ruta donde se guardará el PDF de salida.
-        page_size (str): Tamaño de la página ('A4', 'Letter', 'Legal').
-        orientation (str): Orientación de la página ('portrait' o 'landscape').
-        margins (str): Márgenes ('none', 'small', 'standard', 'large').
-        fit_mode (str): Modo de ajuste de la imagen ('fit' o 'fill').
-    """
-    images = []
-    
     try:
         page_width, page_height = get_page_size(page_size)
         
@@ -543,57 +622,44 @@ def convert_images_to_pdf_with_options(image_paths: list, output_path: str, page
             page_width, page_height = page_height, page_width
 
         margin_value = get_margins(margins)
-
         c = canvas.Canvas(output_path, pagesize=(page_width, page_height))
         
         for image_path in image_paths:
             try:
                 img = Image.open(image_path)
                 
-                if img.mode != 'RGB':
-                    img = img.convert('RGB')
+                # Si tiene transparencia, colocar fondo blanco
+                if img.mode in ("RGBA", "LA"):
+                    background = Image.new("RGB", img.size, (255, 255, 255))
+                    background.paste(img, mask=img.split()[3])
+                    img = background
+                elif img.mode != "RGB":
+                    img = img.convert("RGB")
                 
-                # Calcular dimensiones de la imagen con los márgenes
-                drawable_width = page_width - 2 * margin_value
-                drawable_height = page_height - 2 * margin_value
-                
-                img_width, img_height = img.size
-                
-                # Calcular proporciones
-                aspect_ratio = img_width / img_height
-                
-                if fit_mode == 'fit':
-                    # Ajustar la imagen para que quepa completamente
-                    if (drawable_width / drawable_height) > aspect_ratio:
-                        draw_height = drawable_height
-                        draw_width = draw_height * aspect_ratio
-                    else:
-                        draw_width = drawable_width
-                        draw_height = draw_width / aspect_ratio
-                else: # fit_mode == 'fill'
-                    # Llenar el espacio disponible, recortando si es necesario
-                    if (drawable_width / drawable_height) < aspect_ratio:
-                        draw_height = drawable_height
-                        draw_width = draw_height * aspect_ratio
-                    else:
-                        draw_width = drawable_width
-                        draw_height = draw_width / aspect_ratio
+                temp_path = image_path + "_temp.jpg"
+                img.save(temp_path, "JPEG")
 
-                # Calcular la posición para centrar la imagen
-                x = (page_width - draw_width) / 2
-                y = (page_height - draw_height) / 2
-                
-                c.drawImage(image_path, x, y, width=draw_width, height=draw_height)
+                # Calcular posición y tamaño usando la nueva función
+                x, y, draw_width, draw_height = calcular_posicion_y_tamano(
+                    img_width=img.width,
+                    img_height=img.height,
+                    page_width=page_width,
+                    page_height=page_height,
+                    margin_value=margin_value,
+                    fit_mode=fit_mode
+                )
+
+                c.drawImage(temp_path, x, y, width=draw_width, height=draw_height)
                 c.showPage()
-                
+
             except Exception as e:
-                print(f"Error processing image {image_path}: {e}")
+                print(f"Error procesando {image_path}: {e}")
             finally:
                 if 'img' in locals() and img:
                     img.close()
         
         c.save()
         return output_path
-    
+
     except Exception as e:
         raise Exception(f"Error al convertir imágenes a PDF: {str(e)}")

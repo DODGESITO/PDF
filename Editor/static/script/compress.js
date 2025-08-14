@@ -96,7 +96,6 @@ async handleFileSelect(event) {
         return;
     }
 
-    // Validar tamaño (50MB máximo)
     const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
         this.showMessage("El archivo es demasiado grande. Máximo 50MB permitido", "error");
