@@ -105,7 +105,7 @@ body {
 }
 
 .header-section h1 {
-  font-size: 2rem;
+  font-size: 24px;
   font-weight: 700;
   background: linear-gradient(135deg, #ffffff, #8b5cf6);
   background-clip: text;
