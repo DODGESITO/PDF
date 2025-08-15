@@ -33,6 +33,10 @@ ALLOWED_HOSTS = ['172.16.201.103','127.0.0.1','localhost','0.0.0.0', 'pdf-3k23.o
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://pdf-3k23.onrender.com'
+]
+
 # Application definition
 
 INSTALLED_APPS = [
