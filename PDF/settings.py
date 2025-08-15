@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-x1_4_zfzw-6-m42mawxw3=j*f$2qb$18somd&88168uxv040&^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['172.16.201.103','127.0.0.1','localhost','0.0.0.0', 'https://pdf-3k23.onrender.com']
+ALLOWED_HOSTS = ['172.16.201.103','127.0.0.1','localhost','0.0.0.0', 'pdf-3k23.onrender.com']
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
